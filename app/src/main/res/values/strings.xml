@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Clock face</string>
+    <string name="clock_settings">Clock Settings</string>
+    <string name="use_24_hour_format">Use 24-hour format</string>
+    <string name="show_seconds">Show seconds</string>
+    <string name="start_clock">Start Clock</string>
+</resources>
