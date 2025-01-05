@@ -1,8 +1,7 @@
-package com.verifone.clockface
+package com.saidim.clockface
 
 import android.widget.TextView
 import android.animation.ValueAnimator
-import android.view.View
 import android.graphics.Color
 import android.text.SpannableString
 import android.text.Spanned
