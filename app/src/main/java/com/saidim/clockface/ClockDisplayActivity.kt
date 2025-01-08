@@ -1,12 +1,9 @@
-package com.verifone.clockface
+package com.saidim.clockface
 
-import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import android.widget.TextView
 
 class ClockDisplayActivity : AppCompatActivity() {

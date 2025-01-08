@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.verifone.clockface"
+    namespace = "com.saidim.clockface"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.verifone.clockface"
+        applicationId = "com.saidim.clockface"
         minSdk = 24
         targetSdk = 34
         versionCode = 1

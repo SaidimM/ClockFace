@@ -1,4 +1,4 @@
-package com.verifone.clockface
+package com.saidim.clockface
 
 import android.content.Intent
 import android.os.Bundle

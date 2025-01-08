@@ -1,4 +1,4 @@
-package com.verifone.clockface
+package com.saidim.clockface
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
