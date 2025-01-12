@@ -1,30 +1,23 @@
 package com.saidim.clockface.clock
 
-import android.graphics.Color
 import android.os.Bundle
 import android.view.View
 import android.widget.LinearLayout
-import android.widget.TextView
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
-import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.materialswitch.MaterialSwitch
-import com.google.android.material.color.MaterialColors
-import com.saidim.clockface.R
+import com.saidim.clockface.base.BaseActivity
+import com.saidim.clockface.databinding.ActivityClockStyleEditorBinding
 import com.skydoves.colorpickerview.ColorPickerDialog
 import com.skydoves.colorpickerview.listeners.ColorEnvelopeListener
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.*
-import android.content.res.Configuration
-import com.saidim.clockface.base.BaseActivity
 
 class ClockStyleEditorActivity : BaseActivity() {
     private val viewModel: ClockStyleEditorViewModel by viewModels()
-    private lateinit var previewText: TextView
+    private lateinit var binding: ActivityClockStyleEditorBinding
     private lateinit var updateTimer: Timer
 
     companion object {
@@ -34,7 +27,8 @@ class ClockStyleEditorActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_clock_style_editor)
+        binding = ActivityClockStyleEditorBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         val style = intent.getSerializableExtra(EXTRA_STYLE) as ClockStyle
         setupToolbar(style)
@@ -44,19 +38,18 @@ class ClockStyleEditorActivity : BaseActivity() {
     }
 
     private fun setupToolbar(style: ClockStyle) {
-        findViewById<MaterialToolbar>(R.id.topAppBar).apply {
+        binding.topAppBar.apply {
             title = style.displayName
             setNavigationOnClickListener { finishAfterTransition() }
         }
     }
 
     private fun setupPreview(style: ClockStyle) {
-        previewText = findViewById(R.id.previewText)
         updateTimer = Timer().apply {
             schedule(object : TimerTask() {
                 override fun run() {
                     runOnUiThread {
-                        previewText.text = ClockStyleFormatter.formatTime(style)
+                        binding.previewText.text = ClockStyleFormatter.formatTime(style)
                     }
                 }
             }, 0, 1000)
@@ -73,65 +66,71 @@ class ClockStyleEditorActivity : BaseActivity() {
     }
 
     private fun setupControls(style: ClockStyle) {
-        val container = findViewById<LinearLayout>(R.id.controlsContainer)
-        container.removeAllViews()
-        
+        binding.controlsContainer.removeAllViews()
+
         lifecycleScope.launch {
             when (style) {
-                ClockStyle.MINIMAL -> setupMinimalControls(container)
-                ClockStyle.ANALOG -> setupAnalogControls(container)
-                ClockStyle.WORD -> setupWordControls(container)
+                ClockStyle.MINIMAL -> setupMinimalControls(binding.controlsContainer)
+                ClockStyle.ANALOG -> setupAnalogControls(binding.controlsContainer)
+                ClockStyle.WORD -> setupWordControls(binding.controlsContainer)
             }
         }
     }
 
     private suspend fun setupMinimalControls(container: LinearLayout) {
-        container.addView(createSwitchPreference(
-            "24-hour format",
-            "Use 24-hour time format",
-            viewModel.is24Hour.first()
-        ) { checked -> viewModel.setTimeFormat(checked) })
-        
-        container.addView(createSwitchPreference(
-            "Show seconds",
-            "Display seconds in time",
-            viewModel.showSeconds.first()
-        ) { checked -> viewModel.setShowSeconds(checked) })
+        container.addView(
+            createSwitchPreference(
+                "24-hour format",
+                "Use 24-hour time format",
+                viewModel.is24Hour.first()
+            ) { checked -> viewModel.setTimeFormat(checked) })
+
+        container.addView(
+            createSwitchPreference(
+                "Show seconds",
+                "Display seconds in time",
+                viewModel.showSeconds.first()
+            ) { checked -> viewModel.setShowSeconds(checked) })
     }
 
     private suspend fun setupAnalogControls(container: LinearLayout) {
-        container.addView(createSwitchPreference(
-            "Show numbers",
-            "Display hour numbers",
-            viewModel.showAnalogNumbers.first()
-        ) { checked -> viewModel.setShowAnalogNumbers(checked) })
-        
-        container.addView(createSwitchPreference(
-            "Show ticks",
-            "Display minute ticks",
-            viewModel.showAnalogTicks.first()
-        ) { checked -> viewModel.setShowAnalogTicks(checked) })
+        container.addView(
+            createSwitchPreference(
+                "Show numbers",
+                "Display hour numbers",
+                viewModel.showAnalogNumbers.first()
+            ) { checked -> viewModel.setShowAnalogNumbers(checked) })
+
+        container.addView(
+            createSwitchPreference(
+                "Show ticks",
+                "Display minute ticks",
+                viewModel.showAnalogTicks.first()
+            ) { checked -> viewModel.setShowAnalogTicks(checked) })
     }
 
     private suspend fun setupBinaryControls(container: LinearLayout) {
-        container.addView(createSwitchPreference(
-            "Show labels",
-            "Display bit position labels",
-            viewModel.showBinaryLabels.first()
-        ) { checked -> viewModel.setShowBinaryLabels(checked) })
-        
-        container.addView(createColorPicker(
-            "Active bit color",
-            viewModel.binaryActiveColor.first()
-        ) { color -> viewModel.setBinaryActiveColor(color) })
+        container.addView(
+            createSwitchPreference(
+                "Show labels",
+                "Display bit position labels",
+                viewModel.showBinaryLabels.first()
+            ) { checked -> viewModel.setShowBinaryLabels(checked) })
+
+        container.addView(
+            createColorPicker(
+                "Active bit color",
+                viewModel.binaryActiveColor.first()
+            ) { color -> viewModel.setBinaryActiveColor(color) })
     }
 
     private suspend fun setupWordControls(container: LinearLayout) {
-        container.addView(createSwitchPreference(
-            "Use casual format",
-            "Show time in casual language",
-            viewModel.useWordCasual.first()
-        ) { checked -> viewModel.setWordCasual(checked) })
+        container.addView(
+            createSwitchPreference(
+                "Use casual format",
+                "Show time in casual language",
+                viewModel.useWordCasual.first()
+            ) { checked -> viewModel.setWordCasual(checked) })
     }
 
     private fun createSwitchPreference(

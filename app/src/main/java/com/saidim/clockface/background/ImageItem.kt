@@ -1,6 +1,7 @@
 package com.saidim.clockface.background
 
 import android.net.Uri
+import com.saidim.clockface.background.unsplash.UnsplashPhoto
 
 sealed class ImageItem {
     data class DeviceImage(val uri: Uri) : ImageItem() {

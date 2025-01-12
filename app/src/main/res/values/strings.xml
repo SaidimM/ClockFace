@@ -5,4 +5,18 @@
     <string name="show_seconds">Show seconds</string>
     <string name="start_clock">Start Clock</string>
     <string name="clock_preview_transition">clock_preview</string>
+    <!-- Background Types -->
+    <string name="background_type_none">Blank</string>
+    <string name="background_type_image">Image</string>
+    <string name="background_type_slides">Slideshow</string>
+    <string name="background_type_video">Video</string>
+    <!-- Background Settings -->
+    <string name="background_type_title">Background Type</string>
+    <string name="image_source_title">Image Source</string>
+    <string name="video_source_title">Video Source</string>
+    <string name="slideshow_settings_title">Slideshow Settings</string>
+    <string name="device_button">Device</string>
+    <string name="unsplash_button">Unsplash</string>
+    <string name="interval_format">Change interval: %d minutes</string>
+    <string name="background_settings">Background Settings</string>
 </resources>

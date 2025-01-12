@@ -1,31 +1,34 @@
 package com.saidim.clockface.background
 
-import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.button.MaterialButtonToggleGroup
-import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-import com.google.android.material.slider.Slider
 import com.saidim.clockface.R
-import com.unsplash.pickerandroid.photopicker.UnsplashPhotoPicker
-import com.unsplash.pickerandroid.photopicker.presentation.UnsplashPickerActivity
-import kotlinx.coroutines.launch
+import com.saidim.clockface.background.video.VideoAdapter
 import com.saidim.clockface.base.BaseActivity
+import com.saidim.clockface.databinding.ActivityBackgroundSettingsBinding
+import kotlinx.coroutines.launch
+import android.view.View
+import coil.load
+import com.saidim.clockface.utils.getBestVideoFile
+import android.util.Log
+import com.saidim.clockface.background.video.pexels.Video
+import com.google.android.material.tabs.TabLayout
+import com.google.android.material.tabs.TabLayoutMediator
+import com.saidim.clockface.background.unsplash.UnsplashCollection
 
 class BackgroundSettingsActivity : BaseActivity() {
+    private val binding by lazy { ActivityBackgroundSettingsBinding.inflate(layoutInflater) }
     private val viewModel: BackgroundSettingsViewModel by viewModels()
-    private lateinit var selectedImagesAdapter: SelectedImagesAdapter
-    
+
     private val pickImages = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
+        if (result.resultCode == RESULT_OK) {
             result.data?.clipData?.let { clipData ->
                 val imageUris = mutableListOf<Uri>()
                 for (i in 0 until clipData.itemCount) {
@@ -38,90 +41,226 @@ class BackgroundSettingsActivity : BaseActivity() {
         }
     }
 
-    private val pickMultipleMedia = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val photos = result.data?.getParcelableArrayListExtra<com.unsplash.pickerandroid.photopicker.data.UnsplashPhoto>(UnsplashPickerActivity.EXTRA_PHOTOS)
-            if (photos != null) {
-                viewModel.addUnsplashPhotos(photos)
-            }
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_background_settings)
-
+        setContentView(binding.root)
         setupToolbar()
-        setupImageSourceToggle()
-        setupIntervalSlider()
-        setupRecyclerView()
-        setupFab()
+        setupBackgroundTypeSelection()
+        setupImageSourceControls()
+        setupVideoControls()
+        setupSlideshowControls()
         observeViewModel()
+        observePreview()
     }
 
     private fun setupToolbar() {
-        findViewById<androidx.appcompat.widget.Toolbar>(R.id.topAppBar).setNavigationOnClickListener {
-            finish()
-        }
+        binding.topAppBar.setNavigationOnClickListener { finish() }
     }
 
-    private fun setupImageSourceToggle() {
-        findViewById<MaterialButtonToggleGroup>(R.id.imageSourceToggle).addOnButtonCheckedListener { _, checkedId, isChecked ->
+    private fun setupBackgroundTypeSelection() {
+        binding.backgroundTypeSegmentedButton.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (isChecked) {
-                viewModel.setImageSource(when (checkedId) {
-                    R.id.deviceButton -> ImageSource.DEVICE
-                    R.id.unsplashButton -> ImageSource.UNSPLASH
-                    else -> ImageSource.DEVICE
-                })
+                val type = when (checkedId) {
+                    R.id.noneButton -> BackgroundType.NONE
+                    R.id.imageButton -> BackgroundType.IMAGE
+                    R.id.videoButton -> BackgroundType.VIDEO
+                    else -> BackgroundType.NONE
+                }
+                viewModel.setBackgroundType(type)
             }
         }
     }
 
-    private fun setupIntervalSlider() {
-        findViewById<Slider>(R.id.intervalSlider).addOnChangeListener { _, value, _ ->
-            viewModel.setInterval(value.toInt())
-            findViewById<android.widget.TextView>(R.id.intervalText).text = 
-                "Change interval: ${value.toInt()} minutes"
+    private fun setupImageSourceControls() {
+        lifecycleScope.launch {
+            viewModel.collections.collect { collections ->
+                if (collections.isNotEmpty()) {
+                    setupCollectionTabs(collections)
+                }
+            }
         }
     }
 
-    private fun setupRecyclerView() {
-        selectedImagesAdapter = SelectedImagesAdapter { position ->
-            viewModel.removeImage(position)
+    private fun setupCollectionTabs(collections: List<UnsplashCollection>) {
+        // Clear existing tabs
+        binding.tabLayout.removeAllTabs()
+        
+        // Add tab for each collection
+        collections.forEach { collection ->
+            binding.tabLayout.addTab(
+                binding.tabLayout.newTab().apply {
+                    text = collection.title
+                    tag = collection.id
+                }
+            )
         }
-        findViewById<RecyclerView>(R.id.selectedImagesRecyclerView).apply {
+
+        // Setup ViewPager
+        val pagerAdapter = UnsplashCollectionPagerAdapter(
+            collections = collections,
+            fragmentActivity = this
+        )
+        binding.viewPager.apply {
+            adapter = pagerAdapter
+            // Disable swiping to prevent accidental switches
+            isUserInputEnabled = false
+        }
+
+        // Connect TabLayout with ViewPager
+        binding.tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: TabLayout.Tab) {
+                binding.viewPager.currentItem = tab.position
+                // Load photos from selected collection
+                val collectionId = tab.tag as String
+                viewModel.loadCollectionPhotos(collectionId)
+            }
+
+            override fun onTabUnselected(tab: TabLayout.Tab) {}
+            override fun onTabReselected(tab: TabLayout.Tab) {}
+        })
+
+        // Select first collection by default
+        binding.tabLayout.selectTab(binding.tabLayout.getTabAt(0))
+    }
+
+    private fun setupVideoControls() {
+        binding.videoRecyclerView.apply {
             layoutManager = GridLayoutManager(this@BackgroundSettingsActivity, 2)
-            adapter = selectedImagesAdapter
-        }
-    }
-
-    private fun setupFab() {
-        findViewById<ExtendedFloatingActionButton>(R.id.addImagesFab).setOnClickListener {
-            when (viewModel.imageSource.value) {
-                ImageSource.DEVICE -> launchDeviceImagePicker()
-                ImageSource.UNSPLASH -> launchUnsplashPicker()
+            adapter = VideoAdapter { video ->
+                viewModel.selectVideo(video)
             }
         }
     }
 
-    private fun launchDeviceImagePicker() {
-        val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI).apply {
-            type = "image/*"
-            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+    private fun setupSlideshowControls() {
+        binding.intervalSlider.addOnChangeListener { _, value, _ ->
+            viewModel.setInterval(value.toInt())
+            binding.intervalText.text = getString(R.string.interval_format, value.toInt())
         }
-        pickImages.launch(intent)
-    }
-
-    private fun launchUnsplashPicker() {
-        val intent = UnsplashPickerActivity.getStartingIntent(this, true)
-        pickMultipleMedia.launch(intent)
     }
 
     private fun observeViewModel() {
         lifecycleScope.launch {
-            viewModel.selectedImages.collect { images ->
-                selectedImagesAdapter.submitList(images)
+            viewModel.videos.collect { videos ->
+                (binding.videoRecyclerView.adapter as? VideoAdapter)?.submitList(videos)
             }
+        }
+    }
+
+    private fun updateVisibility(type: BackgroundType) {
+        binding.apply {
+            imageSourceCard.isVisible = type == BackgroundType.IMAGE || type == BackgroundType.SLIDES
+            videoSourceCard.isVisible = type == BackgroundType.VIDEO
+            slideshowSettingsCard.isVisible = type == BackgroundType.SLIDES
+
+            if (type == BackgroundType.VIDEO && !viewModel.hasLoadedVideos) {
+                viewModel.loadPexelsVideos()
+            }
+        }
+    }
+
+    private fun observePreview() {
+        lifecycleScope.launch {
+            viewModel.backgroundType.collect { type ->
+                updateVisibility(type)
+                when (type) {
+                    BackgroundType.NONE -> {
+                        binding.previewImage.visibility = View.GONE
+                        binding.previewVideo.visibility = View.GONE
+                        binding.previewPlaceholder.visibility = View.VISIBLE
+                    }
+                    BackgroundType.SLIDES,
+                    BackgroundType.IMAGE -> {
+                        viewModel.selectedImages.collect { images ->
+                            if (images.isNotEmpty()) {
+                                showImagePreview(images.first())
+                            } else {
+                                showPlaceholder()
+                            }
+                        }
+                    }
+                    BackgroundType.VIDEO -> {
+                        viewModel.selectedVideo.collect { video ->
+                            if (video != null) {
+                                showVideoPreview(video)
+                            } else {
+                                showPlaceholder()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun showImagePreview(image: ImageItem) {
+        binding.apply {
+            previewImage.visibility = View.VISIBLE
+            previewVideo.visibility = View.GONE
+            previewPlaceholder.visibility = View.GONE
+            
+            previewImage.load(image.getUrl()) {
+                crossfade(true)
+            }
+        }
+    }
+
+    private fun showVideoPreview(video: Video) {
+        binding.apply {
+            previewImage.visibility = View.GONE
+            previewVideo.visibility = View.VISIBLE
+            previewPlaceholder.visibility = View.GONE
+            
+            video.getBestVideoFile()?.let { videoFile ->
+                previewVideo.apply {
+                    setVideoPath(videoFile.link)
+                    setOnPreparedListener { mediaPlayer ->
+                        mediaPlayer.isLooping = true
+                        mediaPlayer.setVolume(0f, 0f) // Mute the video
+                        start()
+                    }
+                    setOnErrorListener { _, what, extra ->
+                        Log.e("VideoPreview", "Error playing video: what=$what, extra=$extra")
+                        showPlaceholder()
+                        true
+                    }
+                }
+            } ?: showPlaceholder()
+        }
+    }
+
+    private fun showPlaceholder() {
+        binding.apply {
+            previewImage.visibility = View.GONE
+            previewVideo.visibility = View.GONE
+            previewPlaceholder.visibility = View.VISIBLE
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        binding.previewVideo.apply {
+            if (isPlaying) {
+                pause()
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        binding.previewVideo.apply {
+            if (visibility == View.VISIBLE && !isPlaying) {
+                start()
+            }
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        binding.previewVideo.apply {
+            stopPlayback()
+            setOnPreparedListener(null)
+            setOnErrorListener(null)
         }
     }
 } 

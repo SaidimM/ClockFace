@@ -4,57 +4,72 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityOptionsCompat
 import com.google.android.material.button.MaterialButton
 import com.saidim.clockface.background.BackgroundSettingsActivity
 import com.saidim.clockface.clock.ClockStylesActivity
 import com.saidim.clockface.base.BaseActivity
+import com.saidim.clockface.databinding.ActivityMainBinding
 
 class MainActivity : BaseActivity() {
+    private val binding by lazy { ActivityMainBinding.inflate(layoutInflater) }
     private val viewModel: ClockViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-
+        setContentView(binding.root)
         setupButtons()
     }
 
     private fun setupButtons() {
-        findViewById<MaterialButton>(R.id.startButton).setOnClickListener {
-            startClockDisplay()
+        binding.startButton.apply {
+            setOnClickListener {
+                navigateToClockDisplay()
+            }
         }
 
-        findViewById<MaterialButton>(R.id.backgroundButton).setOnClickListener {
+        binding.backgroundButton.setOnClickListener {
             openBackgroundSettings()
         }
 
-        findViewById<MaterialButton>(R.id.clockButton).setOnClickListener {
+        binding.clockButton.setOnClickListener {
             openClockStyles()
         }
 
-        findViewById<MaterialButton>(R.id.settingsButton).setOnClickListener {
+        binding.settingsButton.setOnClickListener {
             openSettings()
         }
     }
 
-    private fun startClockDisplay() {
-        Intent(this, ClockDisplayActivity::class.java).apply {
-            putExtra("is24Hour", viewModel.is24Hour.value)
-            putExtra("showSeconds", viewModel.showSeconds.value)
-            startActivity(this)
+    private fun navigateToClockDisplay() {
+        val intent = Intent(this, ClockDisplayActivity::class.java).apply {
+            putExtra(EXTRA_IS_24_HOUR, viewModel.is24Hour.value)
+            putExtra(EXTRA_SHOW_SECONDS, viewModel.showSeconds.value)
         }
+        
+        val options = ActivityOptionsCompat.makeSceneTransitionAnimation(
+            this,
+            binding.startButton,
+            getString(R.string.clock_preview_transition)
+        )
+        
+        startActivity(intent, options.toBundle())
     }
 
     private fun openBackgroundSettings() {
-         Intent(this, BackgroundSettingsActivity::class.java).also(::startActivity)
+        startActivity(Intent(this, BackgroundSettingsActivity::class.java))
     }
 
     private fun openClockStyles() {
-        Intent(this, ClockStylesActivity::class.java).also(::startActivity)
+        startActivity(Intent(this, ClockStylesActivity::class.java))
     }
 
     private fun openSettings() {
         // TODO: Implement settings activity
-        // Intent(this, SettingsActivity::class.java).also(::startActivity)
+    }
+
+    companion object {
+        const val EXTRA_IS_24_HOUR = "extra_is_24_hour"
+        const val EXTRA_SHOW_SECONDS = "extra_show_seconds"
     }
 }

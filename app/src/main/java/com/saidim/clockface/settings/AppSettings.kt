@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -27,6 +28,8 @@ class AppSettings(private val context: Context) {
         val SHOW_BINARY_LABELS = booleanPreferencesKey("show_binary_labels")
         val BINARY_COLOR = intPreferencesKey("binary_color")
         val USE_WORD_CASUAL = booleanPreferencesKey("use_word_casual")
+        val BACKGROUND_TYPE = intPreferencesKey("background_type")
+        val VIDEO_BACKGROUND = stringPreferencesKey("video_background")
     }
 
     val showSeconds: Flow<Boolean> = context.dataStore.data
@@ -49,6 +52,12 @@ class AppSettings(private val context: Context) {
     
     val backgroundInterval: Flow<Int> = context.dataStore.data
         .map { preferences -> preferences[Keys.BACKGROUND_INTERVAL] ?: 30 }
+
+    val backgroundType: Flow<Int> = context.dataStore.data
+        .map { preferences -> preferences[Keys.BACKGROUND_TYPE] ?: 0 }
+
+    val videoBackground: Flow<String?> = context.dataStore.data
+        .map { preferences -> preferences[Keys.VIDEO_BACKGROUND] }
 
     suspend fun updateShowSeconds(show: Boolean) {
         context.dataStore.edit { preferences -> 
@@ -125,6 +134,18 @@ class AppSettings(private val context: Context) {
     suspend fun updateWordCasual(casual: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[Keys.USE_WORD_CASUAL] = casual
+        }
+    }
+
+    suspend fun updateBackgroundType(type: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[Keys.BACKGROUND_TYPE] = type
+        }
+    }
+
+    suspend fun updateVideoBackground(videoUrl: String) {
+        context.dataStore.edit { preferences ->
+            preferences[Keys.VIDEO_BACKGROUND] = videoUrl
         }
     }
 } 
