@@ -4,11 +4,13 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.saidim.clockface.clock.ClockStyle
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.saidim.clockface.clock.ClockStyleFormatter
 
 class ClockViewModel : ViewModel() {
     private val _currentTime = MutableLiveData<String>()
@@ -19,6 +21,9 @@ class ClockViewModel : ViewModel() {
 
     private val _showSeconds = MutableLiveData(true)
     val showSeconds: LiveData<Boolean> = _showSeconds
+
+    private val _clockStyle = MutableLiveData<ClockStyle>(ClockStyle.MINIMAL)
+    val clockStyle: LiveData<ClockStyle> = _clockStyle
 
     init {
         startClock()
@@ -34,12 +39,17 @@ class ClockViewModel : ViewModel() {
     }
 
     private fun updateTime() {
-        val pattern = when {
-            showSeconds.value == true -> if (is24Hour.value == true) "HH:mm:ss" else "hh:mm:ss a"
-            else -> if (is24Hour.value == true) "HH:mm" else "hh:mm a"
+        val currentDate = Date()
+        _currentTime.value = when (clockStyle.value) {
+            ClockStyle.MINIMAL -> {
+                val pattern = when {
+                    showSeconds.value == true -> if (is24Hour.value == true) "HH:mm:ss" else "hh:mm:ss a"
+                    else -> if (is24Hour.value == true) "HH:mm" else "hh:mm a"
+                }
+                SimpleDateFormat(pattern, Locale.getDefault()).format(currentDate)
+            }
+            else -> ClockStyleFormatter.formatTime(clockStyle.value ?: ClockStyle.MINIMAL, currentDate)
         }
-        val sdf = SimpleDateFormat(pattern, Locale.getDefault())
-        _currentTime.value = sdf.format(Date())
     }
 
     fun setTimeFormat(is24Hour: Boolean) {
@@ -48,5 +58,9 @@ class ClockViewModel : ViewModel() {
 
     fun setShowSeconds(show: Boolean) {
         _showSeconds.value = show
+    }
+
+    fun setClockStyle(style: ClockStyle) {
+        _clockStyle.value = style
     }
 } 

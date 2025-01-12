@@ -1,8 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          xmlns:tools="http://schemas.android.com/tools">
+          xmlns:tools="http://schemas.android.com/tools"
+          package="com.saidim.clockface">
+
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <!-- For Android 13+ -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
+            android:name=".ClockFaceApplication"
             android:allowBackup="true"
             android:dataExtractionRules="@xml/data_extraction_rules"
             android:fullBackupContent="@xml/backup_rules"
@@ -26,6 +34,18 @@
                 android:exported="false"
                 android:theme="@style/Theme.ClockFace.Fullscreen"
                 android:screenOrientation="fullSensor"/>
+        <activity
+                android:name=".background.BackgroundSettingsActivity"
+                android:exported="false"
+                android:label="Background Settings"/>
+        <activity
+                android:name=".clock.ClockStylesActivity"
+                android:exported="false"
+                android:label="Clock Styles"/>
+        <activity
+                android:name=".clock.ClockStyleEditorActivity"
+                android:exported="false"
+                android:theme="@style/Theme.ClockFace"/>
     </application>
 
 </manifest>

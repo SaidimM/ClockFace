@@ -47,4 +47,11 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
     implementation("androidx.activity:activity-ktx:1.9.3")
     implementation("com.airbnb.android:lottie:6.4.0")
+    implementation("com.github.unsplash:unsplash-photopicker-android:1.0.1")
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("io.coil-kt:coil:2.5.0")
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
+    implementation("androidx.datastore:datastore-preferences-core:1.0.0")
+    implementation("com.github.skydoves:colorpickerview:2.3.0")
 }

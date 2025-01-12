@@ -4,42 +4,57 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import com.google.android.material.switchmaterial.SwitchMaterial
 import com.google.android.material.button.MaterialButton
+import com.saidim.clockface.background.BackgroundSettingsActivity
+import com.saidim.clockface.clock.ClockStylesActivity
+import com.saidim.clockface.base.BaseActivity
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : BaseActivity() {
     private val viewModel: ClockViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val switch24Hour = findViewById<SwitchMaterial>(R.id.switch24Hour)
-        val switchShowSeconds = findViewById<SwitchMaterial>(R.id.switchShowSeconds)
-        val startButton = findViewById<MaterialButton>(R.id.startButton)
+        setupButtons()
+    }
 
-        viewModel.is24Hour.observe(this) { is24Hour ->
-            switch24Hour.isChecked = is24Hour
+    private fun setupButtons() {
+        findViewById<MaterialButton>(R.id.startButton).setOnClickListener {
+            startClockDisplay()
         }
 
-        viewModel.showSeconds.observe(this) { showSeconds ->
-            switchShowSeconds.isChecked = showSeconds
+        findViewById<MaterialButton>(R.id.backgroundButton).setOnClickListener {
+            openBackgroundSettings()
         }
 
-        switch24Hour.setOnCheckedChangeListener { _, isChecked ->
-            viewModel.setTimeFormat(isChecked)
+        findViewById<MaterialButton>(R.id.clockButton).setOnClickListener {
+            openClockStyles()
         }
 
-        switchShowSeconds.setOnCheckedChangeListener { _, isChecked ->
-            viewModel.setShowSeconds(isChecked)
+        findViewById<MaterialButton>(R.id.settingsButton).setOnClickListener {
+            openSettings()
         }
+    }
 
-        startButton.setOnClickListener {
-            Intent(this, ClockDisplayActivity::class.java).apply {
-                putExtra("is24Hour", viewModel.is24Hour.value)
-                putExtra("showSeconds", viewModel.showSeconds.value)
-                startActivity(this)
-            }
+    private fun startClockDisplay() {
+        Intent(this, ClockDisplayActivity::class.java).apply {
+            putExtra("is24Hour", viewModel.is24Hour.value)
+            putExtra("showSeconds", viewModel.showSeconds.value)
+            startActivity(this)
         }
+    }
+
+    private fun openBackgroundSettings() {
+         Intent(this, BackgroundSettingsActivity::class.java).also(::startActivity)
+    }
+
+    private fun openClockStyles() {
+        Intent(this, ClockStylesActivity::class.java).also(::startActivity)
+    }
+
+    private fun openSettings() {
+        // TODO: Implement settings activity
+        // Intent(this, SettingsActivity::class.java).also(::startActivity)
     }
 }
