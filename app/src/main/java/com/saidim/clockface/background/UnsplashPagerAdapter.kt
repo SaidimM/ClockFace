@@ -12,7 +12,6 @@ class UnsplashPagerAdapter(
 
     override fun createFragment(position: Int): Fragment {
         return when (position) {
-            0 -> UnsplashCollectionsFragment()
             1 -> UnsplashPhotosFragment()
             else -> throw IllegalArgumentException("Invalid position $position")
         }

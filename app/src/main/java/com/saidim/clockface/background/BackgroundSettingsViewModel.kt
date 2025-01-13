@@ -7,6 +7,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.saidim.clockface.background.unsplash.UnsplashCollection
 import com.saidim.clockface.background.unsplash.UnsplashPhoto
+import com.saidim.clockface.background.unsplash.UnsplashPhotoDto
 import com.saidim.clockface.settings.AppSettings
 import com.saidim.clockface.background.video.PexelsVideoRepository
 import com.saidim.clockface.background.video.pexels.Video
@@ -33,7 +34,7 @@ class BackgroundSettingsViewModel(application: Application) : AndroidViewModel(a
     private val _interval = MutableStateFlow(30)
     val interval: StateFlow<Int> = _interval
 
-    private val _backgroundType = MutableStateFlow(BackgroundType.NONE)
+    private val _backgroundType = MutableStateFlow(BackgroundType.COLOR)
     val backgroundType: StateFlow<BackgroundType> = _backgroundType
 
     private val _videos = MutableStateFlow<List<Video>>(emptyList())
@@ -51,20 +52,15 @@ class BackgroundSettingsViewModel(application: Application) : AndroidViewModel(a
     private val _collectionPhotos = MutableStateFlow<List<ImageItem>>(emptyList())
     val collectionPhotos: StateFlow<List<ImageItem>> = _collectionPhotos
 
+    private val _currentTopic = MutableStateFlow<String?>(null)
+    val currentTopic: StateFlow<String?> = _currentTopic
+
+    private val _searchResults = MutableStateFlow<List<UnsplashPhotoDto>>(emptyList())
+    val searchResults: StateFlow<List<UnsplashPhotoDto>> = _searchResults
+
     init {
         viewModelScope.launch {
             _interval.value = appSettings.backgroundInterval.first()
-            loadCollections()
-        }
-    }
-
-    private fun loadCollections() {
-        viewModelScope.launch {
-            try {
-                _collections.value = unsplashRepository.getCollections()
-            } catch (e: Exception) {
-                Log.e("BackgroundSettingsVM", "Error loading collections", e)
-            }
         }
     }
 
@@ -141,23 +137,15 @@ class BackgroundSettingsViewModel(application: Application) : AndroidViewModel(a
         }
     }
 
-    fun selectCollection(collection: UnsplashCollection) {
-        viewModelScope.launch {
-            // Load photos from collection and add them to selectedImages
-            val photos = unsplashRepository.getCollectionPhotos(collection.id)
-            addUnsplashPhotos(photos)
-        }
-    }
-
-    fun loadCollectionPhotos(collectionId: String) {
+    fun searchPhotosByTopic(topic: String) {
         viewModelScope.launch {
             try {
-                val photos = unsplashRepository.getCollectionPhotos(collectionId)
-                _collectionPhotos.value = photos.map { photo ->
-                    ImageItem.UnsplashImage(photo)
-                }
+                _currentTopic.value = topic
+                val result = unsplashRepository.searchPhotos(topic)
+                _searchResults.value = result.results
             } catch (e: Exception) {
-                Log.e("BackgroundSettingsVM", "Error loading collection photos", e)
+                Log.e("BackgroundSettingsVM", "Error searching photos", e)
+                _searchResults.value = emptyList()
             }
         }
     }

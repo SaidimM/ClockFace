@@ -1,5 +1,6 @@
-package com.saidim.clockface.background
+package com.saidim.clockface.background.unsplash
 
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -8,16 +9,15 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
+import com.saidim.clockface.background.BackgroundSettingsViewModel
 import com.saidim.clockface.databinding.FragmentUnsplashGridBinding
 import kotlinx.coroutines.launch
 
-class UnsplashCollectionsFragment : Fragment() {
+class TopicPhotosFragment : Fragment() {
     private var _binding: FragmentUnsplashGridBinding? = null
     private val binding get() = _binding!!
     private val viewModel: BackgroundSettingsViewModel by activityViewModels()
-    private val adapter = UnsplashCollectionsAdapter { collection ->
-        viewModel.selectCollection(collection)
-    }
+    private lateinit var photoAdapter: UnsplashImageAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -31,20 +31,31 @@ class UnsplashCollectionsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupRecyclerView()
-        observeCollections()
-    }
+        observeSearchResults()
 
-    private fun setupRecyclerView() {
-        binding.recyclerView.apply {
-            layoutManager = GridLayoutManager(requireContext(), 2)
-            adapter = this@UnsplashCollectionsFragment.adapter
+        // Get topic from arguments and trigger search
+        arguments?.getString(ARG_TOPIC)?.let { topic ->
+            viewModel.searchPhotosByTopic(topic)
         }
     }
 
-    private fun observeCollections() {
+    private fun setupRecyclerView() {
+        photoAdapter = UnsplashImageAdapter { photo ->
+            // Handle photo selection
+            viewModel.addImages(listOf(Uri.parse(photo.urls.regular)))
+
+        }
+
+        binding.recyclerView.apply {
+            layoutManager = GridLayoutManager(requireContext(), 2)
+            adapter = photoAdapter
+        }
+    }
+
+    private fun observeSearchResults() {
         viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.collections.collect { collections ->
-                adapter.submitList(collections)
+            viewModel.searchResults.collect { photos ->
+                photoAdapter.submitList(photos)
             }
         }
     }
@@ -52,5 +63,17 @@ class UnsplashCollectionsFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    companion object {
+        private const val ARG_TOPIC = "topic"
+
+        fun newInstance(topic: String): TopicPhotosFragment {
+            return TopicPhotosFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_TOPIC, topic)
+                }
+            }
+        }
     }
 } 

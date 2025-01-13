@@ -6,7 +6,7 @@
     <string name="start_clock">Start Clock</string>
     <string name="clock_preview_transition">clock_preview</string>
     <!-- Background Types -->
-    <string name="background_type_none">Blank</string>
+    <string name="background_type_color">Color</string>
     <string name="background_type_image">Image</string>
     <string name="background_type_slides">Slideshow</string>
     <string name="background_type_video">Video</string>

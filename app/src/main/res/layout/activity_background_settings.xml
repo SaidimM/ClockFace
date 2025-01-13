@@ -96,7 +96,7 @@
                                 android:id="@+id/noneButton"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="@string/background_type_none"
+                                android:text="@string/background_type_color"
                                 style="@style/Widget.Material3.Button.OutlinedButton"/>
 
                         <com.google.android.material.button.MaterialButton
@@ -113,6 +113,23 @@
                                 android:text="@string/background_type_video"
                                 style="@style/Widget.Material3.Button.OutlinedButton"/>
                     </com.google.android.material.button.MaterialButtonToggleGroup>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Slideshow Settings Card -->
+            <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/colorSourceCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:visibility="gone"
+                    style="@style/Widget.Material3.CardView.Elevated">
+
+                <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -138,47 +155,8 @@
                     <androidx.viewpager2.widget.ViewPager2
                             android:id="@+id/viewPager"
                             android:layout_width="match_parent"
-                            android:layout_height="400dp"/>
+                            android:layout_height="wrap_content"/>
 
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Slideshow Settings Card -->
-            <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/slideshowSettingsCard"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:visibility="gone"
-                    style="@style/Widget.Material3.CardView.Elevated">
-
-                <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="16dp">
-
-                    <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/slideshow_settings_title"
-                            android:textAppearance="?attr/textAppearanceTitleMedium"/>
-
-                    <TextView
-                            android:id="@+id/intervalText"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:textAppearance="?attr/textAppearanceBodyMedium"/>
-
-                    <com.google.android.material.slider.Slider
-                            android:id="@+id/intervalSlider"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:valueFrom="1"
-                            android:valueTo="60"
-                            android:stepSize="1"/>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
