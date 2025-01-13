@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
 class ClockStylesViewModel(application: Application) : AndroidViewModel(application) {
     private val appSettings = AppSettings(application)
     
-    private val _clockStyles = MutableStateFlow<List<ClockStyle>>(ClockStyle.values().toList())
+    private val _clockStyles = MutableStateFlow<List<ClockStyle>>(ClockStyle.entries)
     val clockStyles: StateFlow<List<ClockStyle>> = _clockStyles
 
     private val _selectedStyle = MutableStateFlow<ClockStyle>(ClockStyle.MINIMAL)

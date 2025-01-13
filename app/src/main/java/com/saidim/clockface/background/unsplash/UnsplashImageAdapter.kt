@@ -1,5 +1,6 @@
 package com.saidim.clockface.background.unsplash
 
+import android.graphics.drawable.BitmapDrawable
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
@@ -38,9 +39,7 @@ class UnsplashImageAdapter(
         fun bind(photo: UnsplashPhotoDto) {
             binding.apply {
                 // Load the image using Coil
-                image.load(photo.urls.small) {
-                    crossfade(true)
-                }
+                image.load(photo.urls.small) { crossfade(true) }
                 // Set photographer name
                 photographerName.text = photo.user.name
             }

@@ -5,8 +5,6 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.saidim.clockface.background.unsplash.UnsplashCollection
-import com.saidim.clockface.background.unsplash.UnsplashPhoto
 import com.saidim.clockface.background.unsplash.UnsplashPhotoDto
 import com.saidim.clockface.settings.AppSettings
 import com.saidim.clockface.background.video.PexelsVideoRepository
@@ -17,6 +15,7 @@ import com.saidim.clockface.background.unsplash.UnsplashRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 
 class BackgroundSettingsViewModel(application: Application) : AndroidViewModel(application) {
@@ -25,14 +24,8 @@ class BackgroundSettingsViewModel(application: Application) : AndroidViewModel(a
     private val pexelsRepository = PexelsVideoRepository()
     private val unsplashRepository = UnsplashRepository()
 
-    private val _imageSource = MutableStateFlow(ImageSource.DEVICE)
-    val imageSource: StateFlow<ImageSource> = _imageSource
-
     private val _selectedImages = MutableStateFlow<List<ImageItem>>(emptyList())
     val selectedImages: StateFlow<List<ImageItem>> = _selectedImages
-
-    private val _interval = MutableStateFlow(30)
-    val interval: StateFlow<Int> = _interval
 
     private val _backgroundType = MutableStateFlow(BackgroundType.COLOR)
     val backgroundType: StateFlow<BackgroundType> = _backgroundType
@@ -46,9 +39,6 @@ class BackgroundSettingsViewModel(application: Application) : AndroidViewModel(a
     private val _selectedVideo = MutableStateFlow<Video?>(null)
     val selectedVideo: StateFlow<Video?> = _selectedVideo
 
-    private val _collections = MutableStateFlow<List<UnsplashCollection>>(emptyList())
-    val collections: StateFlow<List<UnsplashCollection>> = _collections
-
     private val _collectionPhotos = MutableStateFlow<List<ImageItem>>(emptyList())
     val collectionPhotos: StateFlow<List<ImageItem>> = _collectionPhotos
 
@@ -58,31 +48,8 @@ class BackgroundSettingsViewModel(application: Application) : AndroidViewModel(a
     private val _searchResults = MutableStateFlow<List<UnsplashPhotoDto>>(emptyList())
     val searchResults: StateFlow<List<UnsplashPhotoDto>> = _searchResults
 
-    init {
-        viewModelScope.launch {
-            _interval.value = appSettings.backgroundInterval.first()
-        }
-    }
-
-    fun setImageSource(source: ImageSource) {
-        _imageSource.value = source
-    }
-
-    fun setInterval(minutes: Int) {
-        viewModelScope.launch {
-            _interval.value = minutes
-            appSettings.updateBackgroundInterval(minutes)
-            backgroundSlideshow.setInterval(minutes)
-        }
-    }
-
     fun addImages(uris: List<Uri>) {
         val newImages = uris.map { ImageItem.DeviceImage(it) }
-        updateImages(newImages)
-    }
-
-    fun addUnsplashPhotos(photos: List<UnsplashPhoto>) {
-        val newImages = photos.map { ImageItem.UnsplashImage(it) }
         updateImages(newImages)
     }
 
@@ -137,16 +104,12 @@ class BackgroundSettingsViewModel(application: Application) : AndroidViewModel(a
         }
     }
 
-    fun searchPhotosByTopic(topic: String) {
-        viewModelScope.launch {
-            try {
-                _currentTopic.value = topic
-                val result = unsplashRepository.searchPhotos(topic)
-                _searchResults.value = result.results
-            } catch (e: Exception) {
-                Log.e("BackgroundSettingsVM", "Error searching photos", e)
-                _searchResults.value = emptyList()
-            }
+    fun searchPhotosByTopic(topic: String) = flow {
+        try {
+            val result = unsplashRepository.searchPhotos(topic)
+            emit(result.results)
+        } catch (e: Exception) {
+            Log.e("BackgroundSettingsVM", "Error searching photos", e)
         }
     }
 } 

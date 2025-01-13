@@ -13,7 +13,7 @@ import com.saidim.clockface.background.BackgroundSettingsViewModel
 import com.saidim.clockface.databinding.FragmentUnsplashGridBinding
 import kotlinx.coroutines.launch
 
-class TopicPhotosFragment : Fragment() {
+class TopicPhotosFragment(private val topic: String) : Fragment() {
     private var _binding: FragmentUnsplashGridBinding? = null
     private val binding get() = _binding!!
     private val viewModel: BackgroundSettingsViewModel by activityViewModels()
@@ -32,18 +32,13 @@ class TopicPhotosFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         setupRecyclerView()
         observeSearchResults()
-
-        // Get topic from arguments and trigger search
-        arguments?.getString(ARG_TOPIC)?.let { topic ->
-            viewModel.searchPhotosByTopic(topic)
-        }
+        lifecycleScope.launch { viewModel.searchPhotosByTopic(topic).collect { photoAdapter.submitList(it) } }
     }
 
     private fun setupRecyclerView() {
         photoAdapter = UnsplashImageAdapter { photo ->
             // Handle photo selection
             viewModel.addImages(listOf(Uri.parse(photo.urls.regular)))
-
         }
 
         binding.recyclerView.apply {
@@ -63,17 +58,5 @@ class TopicPhotosFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
-    }
-
-    companion object {
-        private const val ARG_TOPIC = "topic"
-
-        fun newInstance(topic: String): TopicPhotosFragment {
-            return TopicPhotosFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_TOPIC, topic)
-                }
-            }
-        }
     }
 } 

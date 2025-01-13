@@ -1,47 +1,28 @@
 package com.saidim.clockface.background
 
-import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
-import android.provider.MediaStore
-import androidx.activity.result.contract.ActivityResultContracts
+import android.util.Log
+import android.view.View
 import androidx.activity.viewModels
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
+import coil.load
+import com.google.android.material.tabs.TabLayoutMediator
 import com.saidim.clockface.R
+import com.saidim.clockface.background.unsplash.TopicPagerAdapter
+import com.saidim.clockface.background.unsplash.UnsplashTopics
 import com.saidim.clockface.background.video.VideoAdapter
+import com.saidim.clockface.background.video.pexels.Video
 import com.saidim.clockface.base.BaseActivity
 import com.saidim.clockface.databinding.ActivityBackgroundSettingsBinding
-import kotlinx.coroutines.launch
-import android.view.View
-import coil.load
 import com.saidim.clockface.utils.getBestVideoFile
-import android.util.Log
-import com.saidim.clockface.background.video.pexels.Video
-import com.google.android.material.tabs.TabLayout
-import com.google.android.material.tabs.TabLayoutMediator
-import com.saidim.clockface.background.unsplash.TopicPagerAdapter
-import com.saidim.clockface.background.unsplash.UnsplashCollection
-import com.saidim.clockface.background.unsplash.UnsplashTopics
+import kotlinx.coroutines.launch
 
 class BackgroundSettingsActivity : BaseActivity() {
     private val binding by lazy { ActivityBackgroundSettingsBinding.inflate(layoutInflater) }
     private val viewModel: BackgroundSettingsViewModel by viewModels()
-
-    private val pickImages = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == RESULT_OK) {
-            result.data?.clipData?.let { clipData ->
-                val imageUris = mutableListOf<Uri>()
-                for (i in 0 until clipData.itemCount) {
-                    imageUris.add(clipData.getItemAt(i).uri)
-                }
-                viewModel.addImages(imageUris)
-            } ?: result.data?.data?.let { uri ->
-                viewModel.addImages(listOf(uri))
-            }
-        }
-    }
+    private var topicPagerAdapter: TopicPagerAdapter? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -75,7 +56,6 @@ class BackgroundSettingsActivity : BaseActivity() {
     private fun setupImageSourceControls() {
         // Clear existing tabs
         binding.tabLayout.removeAllTabs()
-        
         // Add tabs for each topic
         UnsplashTopics.topics.forEach { topic ->
             binding.tabLayout.addTab(
@@ -86,13 +66,16 @@ class BackgroundSettingsActivity : BaseActivity() {
         }
 
         // Setup ViewPager
-        val pagerAdapter = TopicPagerAdapter(
+        topicPagerAdapter = TopicPagerAdapter(
             topics = UnsplashTopics.topics,
             fragmentActivity = this
         )
+        
         binding.viewPager.apply {
-            adapter = pagerAdapter
+            adapter = topicPagerAdapter
+            offscreenPageLimit = 2  // Cache 2 pages on each side
             isUserInputEnabled = true // Enable swiping between topics
+            isNestedScrollingEnabled = true // Enable nested scrolling
         }
 
         // Connect TabLayout with ViewPager using TabLayoutMediator
@@ -124,9 +107,9 @@ class BackgroundSettingsActivity : BaseActivity() {
             videoSourceCard.isVisible = type == BackgroundType.VIDEO
             colorSourceCard.isVisible = type == BackgroundType.COLOR
 
-            previewPlaceholder.isVisible = type == BackgroundType.IMAGE
-            previewImage.isVisible = type == BackgroundType.VIDEO
-            previewVideo.isVisible = type == BackgroundType.COLOR
+            previewPlaceholder.isVisible = type == BackgroundType.COLOR
+            previewImage.isVisible = type == BackgroundType.IMAGE
+            previewVideo.isVisible = type == BackgroundType.VIDEO
 
             if (type == BackgroundType.VIDEO && !viewModel.hasLoadedVideos) {
                 viewModel.loadPexelsVideos()
@@ -161,7 +144,7 @@ class BackgroundSettingsActivity : BaseActivity() {
             previewImage.visibility = View.VISIBLE
             previewVideo.visibility = View.GONE
             previewPlaceholder.visibility = View.GONE
-            
+
             previewImage.load(image.getUrl()) {
                 crossfade(true)
             }
@@ -173,7 +156,7 @@ class BackgroundSettingsActivity : BaseActivity() {
             previewImage.visibility = View.GONE
             previewVideo.visibility = View.VISIBLE
             previewPlaceholder.visibility = View.GONE
-            
+
             video.getBestVideoFile()?.let { videoFile ->
                 previewVideo.apply {
                     setVideoPath(videoFile.link)
@@ -220,6 +203,8 @@ class BackgroundSettingsActivity : BaseActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        topicPagerAdapter?.clearFragments()
+        topicPagerAdapter = null
         binding.previewVideo.apply {
             stopPlayback()
             setOnPreparedListener(null)

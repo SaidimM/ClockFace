@@ -45,4 +45,62 @@ class UnsplashRepository {
             orientation = orientation
         )
     }
+
+    suspend fun getCollectionPhotos(collectionId: String): List<UnsplashPhoto> {
+        return try {
+            api.getCollectionPhotos(collectionId).map { dto ->
+                UnsplashPhoto(
+                    id = dto.id,
+                    urls = UnsplashPhoto.PhotoUrls(
+                        regular = dto.urls.regular,
+                        small = dto.urls.small
+                    ),
+                    user = UnsplashPhoto.User(
+                        name = dto.user.name
+                    )
+                )
+            }
+        } catch (e: Exception) {
+            // Log error and return empty list as fallback
+            emptyList()
+        }
+    }
+
+    suspend fun getCollections(): List<UnsplashCollection> {
+        return try {
+            api.getCollections().map { dto ->
+                UnsplashCollection(
+                    id = dto.id,
+                    title = dto.title,
+                    coverPhoto = UnsplashPhoto(
+                        id = dto.coverPhoto.id,
+                        urls = UnsplashPhoto.PhotoUrls(
+                            regular = dto.coverPhoto.urls.regular,
+                            small = dto.coverPhoto.urls.small
+                        ),
+                        user = UnsplashPhoto.User(
+                            name = dto.coverPhoto.user.name
+                        )
+                    )
+                )
+            }
+        } catch (e: Exception) {
+            // Return sample data as fallback
+            listOf(
+                UnsplashCollection(
+                    id = "1",
+                    title = "Nature",
+                    coverPhoto = UnsplashPhoto(
+                        id = "1",
+                        urls = UnsplashPhoto.PhotoUrls(
+                            regular = "https://images.unsplash.com/photo-1"
+                        ),
+                        user = UnsplashPhoto.User(
+                            name = "John Doe"
+                        )
+                    )
+                )
+            )
+        }
+    }
 } 

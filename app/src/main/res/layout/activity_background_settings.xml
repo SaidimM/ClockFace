@@ -12,7 +12,7 @@
         <com.google.android.material.appbar.CollapsingToolbarLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:layout_scrollFlags="scroll|exitUntilCollapsed"
+                app:layout_scrollFlags="scroll|exitUntilCollapsed|snap"
                 app:contentScrim="?attr/colorSurface">
 
             <FrameLayout
@@ -147,6 +147,7 @@
                         android:orientation="vertical">
 
                     <com.google.android.material.tabs.TabLayout
+                            app:tabMode="scrollable"
                             android:id="@+id/tabLayout"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"

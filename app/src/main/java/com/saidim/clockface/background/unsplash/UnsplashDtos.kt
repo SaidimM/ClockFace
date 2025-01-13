@@ -14,7 +14,8 @@ data class UnsplashSearchResultDto(
 data class UnsplashPhotoDto(
     @Json(name = "id") val id: String,
     @Json(name = "urls") val urls: PhotoUrlsDto,
-    @Json(name = "user") val user: UserDto
+    @Json(name = "user") val user: UserDto,
+    @Json(name = "blur_hash") val blurHash: String
 )
 
 @JsonClass(generateAdapter = true)
@@ -34,4 +35,11 @@ data class UserDto(
     @Json(name = "portfolio_url") val portfolioUrl: String?,
     @Json(name = "bio") val bio: String?,
     @Json(name = "location") val location: String?
-) 
+)
+
+@JsonClass(generateAdapter = true)
+data class UnsplashCollectionDto(
+    @Json(name = "id") val id: String,
+    @Json(name = "title") val title: String,
+    @Json(name = "cover_photo") val coverPhoto: UnsplashPhotoDto
+)
