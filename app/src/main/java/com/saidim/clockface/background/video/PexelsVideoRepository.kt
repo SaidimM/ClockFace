@@ -32,12 +32,13 @@ class PexelsVideoRepository {
         api = retrofit.create(PexelsApi::class.java)
     }
 
-    suspend fun searchVideos(query: String, perPage: Int = 20): List<Video> {
+    suspend fun searchVideos(query: String = ""): List<Video> {
         return try {
-            Log.i("PexelsVideoRepository", "start get data")
-            val data = withContext(Dispatchers.IO) { api.searchVideos(query, perPage) }
-            Log.i("PexelsVideoRepository", data.toString())
-            data.videos
+            LogUtils.d("searchVideos, query: $query")
+            val data = if (query.isEmpty()) withContext(Dispatchers.IO) { api.popularVideos() }
+            else withContext(Dispatchers.IO) { api.searchVideos(query = query) }
+            LogUtils.d(data.toString())
+            data.videos.filter { it.height < it.width }
         } catch (e: Exception) {
             e.printStackTrace()
             Log.e("PexelsVideoRepository", e.message.toString())

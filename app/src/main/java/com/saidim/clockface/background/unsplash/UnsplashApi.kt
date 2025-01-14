@@ -22,6 +22,13 @@ interface UnsplashApi {
     ): UnsplashSearchResultDto
 
     @Headers("Authorization: Client-ID $CLIENT_ID")
+    @GET("search/photos")
+    suspend fun listPhotoes(
+        @Query("page") page: Int = 1,
+        @Query("per_page") perPage: Int = 30
+    ): UnsplashSearchResultDto
+
+    @Headers("Authorization: Client-ID $CLIENT_ID")
     @GET("collections")
     suspend fun getCollections(
         @Query("page") page: Int = 1,

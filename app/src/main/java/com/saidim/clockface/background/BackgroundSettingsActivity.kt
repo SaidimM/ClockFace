@@ -1,8 +1,13 @@
 package com.saidim.clockface.background
 
+import android.content.Context
 import android.os.Bundle
 import android.util.Log
+import android.view.KeyEvent
 import android.view.View
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.EditorInfo.IME_ACTION_GO
+import android.view.inputmethod.InputMethodManager
 import androidx.activity.viewModels
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
@@ -87,15 +92,56 @@ class BackgroundSettingsActivity : BaseActivity() {
     private fun setupVideoControls() {
         binding.videoRecyclerView.apply {
             layoutManager = GridLayoutManager(this@BackgroundSettingsActivity, 2)
-            adapter = VideoAdapter { video ->
-                viewModel.selectVideo(video)
-            }
+            adapter = VideoAdapter { video -> viewModel.selectVideo(video) }
         }
+
+        // Handle both Enter key and IME action
+        binding.videoSourceEdit.apply {
+            setOnEditorActionListener { textView, actionId, event ->
+                when {
+                    // Handle IME_ACTION_SEARCH or IME_ACTION_DONE
+                    actionId == EditorInfo.IME_ACTION_SEARCH || 
+                    actionId == EditorInfo.IME_ACTION_DONE -> {
+                        LogUtils.d("EditorInfo.IME_ACTION_SEARCH pressed")
+                        handleVideoSearch(textView.text.toString())
+                        true
+                    }
+                    // Handle Enter key press
+                    event?.keyCode == KeyEvent.KEYCODE_ENTER && 
+                    event.action == KeyEvent.ACTION_DOWN -> {
+                        LogUtils.d("KeyEvent.KEYCODE_ENTER pressed")
+                        handleVideoSearch(textView.text.toString())
+                        true
+                    }
+                    else -> false
+                }
+            }
+            
+            // Set IME options to show search action
+            imeOptions = EditorInfo.IME_ACTION_SEARCH
+        }
+
+        // Load popular videos by default when video type is selected
+        if (!viewModel.hasLoadedVideos) {
+            viewModel.loadPexelsVideos("popular")
+        }
+    }
+
+    private fun handleVideoSearch(query: String) {
+        binding.videoSourceEdit.clearFocus()
+        hideKeyboard(binding.videoSourceEdit)
+        viewModel.loadPexelsVideos(query)
+    }
+
+    private fun hideKeyboard(view: View) {
+        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.hideSoftInputFromWindow(view.windowToken, 0)
     }
 
     private fun observeViewModel() {
         lifecycleScope.launch {
             viewModel.videos.collect { videos ->
+                LogUtils.d(videos.toString())
                 (binding.videoRecyclerView.adapter as? VideoAdapter)?.submitList(videos)
             }
         }
@@ -111,8 +157,8 @@ class BackgroundSettingsActivity : BaseActivity() {
             previewImage.isVisible = type == BackgroundType.IMAGE
             previewVideo.isVisible = type == BackgroundType.VIDEO
 
-            if (type == BackgroundType.VIDEO && !viewModel.hasLoadedVideos) {
-                viewModel.loadPexelsVideos()
+            if (type == BackgroundType.VIDEO) {
+                viewModel.loadPexelsVideos("")
             }
         }
     }

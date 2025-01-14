@@ -80,12 +80,12 @@ class BackgroundSettingsViewModel(application: Application) : AndroidViewModel(a
         }
     }
 
-    fun loadPexelsVideos() {
+    fun loadPexelsVideos(topic: String) {
         viewModelScope.launch {
             try {
-                val videos = pexelsRepository.searchVideos("nature")
+                val videos = pexelsRepository.searchVideos(topic)
                 val videoIds = videos.joinToString(", ") { it.id.toString() }
-                Log.d(this.javaClass.simpleName, "Video IDs: $videoIds")
+                Log.d(this.javaClass.simpleName, "query: $topic Video IDs: $videoIds")
                 _videos.value = videos
                 hasLoadedVideos = true
             } catch (e: Exception) {

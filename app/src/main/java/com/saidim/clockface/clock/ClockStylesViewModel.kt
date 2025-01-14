@@ -22,7 +22,7 @@ class ClockStylesViewModel(application: Application) : AndroidViewModel(applicat
         viewModelScope.launch {
             val savedStyleIndex = appSettings.clockStyle.first()
             _selectedStyle.value = try {
-                ClockStyle.values()[savedStyleIndex]
+                ClockStyle.entries[savedStyleIndex]
             } catch (e: ArrayIndexOutOfBoundsException) {
                 ClockStyle.MINIMAL // Fallback to default style
             }
