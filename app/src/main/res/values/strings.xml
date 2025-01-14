@@ -19,4 +19,21 @@
     <string name="unsplash_button">Unsplash</string>
     <string name="interval_format">Change interval: %d minutes</string>
     <string name="background_settings">Background Settings</string>
+    <string name="color_settings">Color Settings</string>
+    <string name="solid_color">Solid Color</string>
+    <string name="gradient">Gradient</string>
+    <string name="animate_gradient">Animate Gradient</string>
+    <string name="three_layer_gradient">Three Layer Effect</string>
+    <string name="pick_color">Pick Color</string>
+    <string name="select_color">Select Color</string>
+    <string name="top_to_bottom">Top to Bottom</string>
+    <string name="left_to_right">Left to Right</string>
+    <!-- Color Settings -->
+    <string name="select_colors">Select Colors</string>
+    <string name="add_custom_color">Add Custom Color</string>
+    <string name="enable_gradient">Enable Gradient</string>
+    <string name="gradient_direction">Gradient Direction</string>
+    <string name="top_bottom">Top to Bottom</string>
+    <string name="left_right">Left to Right</string>
+    <string name="diagonal">Diagonal</string>
 </resources>
