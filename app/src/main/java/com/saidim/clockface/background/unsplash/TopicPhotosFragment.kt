@@ -10,6 +10,7 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import com.saidim.clockface.background.BackgroundSettingsViewModel
+import com.saidim.clockface.background.ImageItem
 import com.saidim.clockface.databinding.FragmentUnsplashGridBinding
 import kotlinx.coroutines.launch
 
@@ -38,7 +39,7 @@ class TopicPhotosFragment(private val topic: String) : Fragment() {
     private fun setupRecyclerView() {
         photoAdapter = UnsplashImageAdapter { photo ->
             // Handle photo selection
-            viewModel.addImages(listOf(Uri.parse(photo.urls.regular)))
+            viewModel.selectImage(ImageItem.UnsplashImage(photo))
         }
 
         binding.recyclerView.apply {

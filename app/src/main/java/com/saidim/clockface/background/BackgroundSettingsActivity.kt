@@ -1,12 +1,12 @@
 package com.saidim.clockface.background
 
+import LogUtils
 import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.view.KeyEvent
 import android.view.View
 import android.view.inputmethod.EditorInfo
-import android.view.inputmethod.EditorInfo.IME_ACTION_GO
 import android.view.inputmethod.InputMethodManager
 import androidx.activity.viewModels
 import androidx.core.view.isVisible
@@ -16,6 +16,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import coil.load
 import com.google.android.material.tabs.TabLayoutMediator
 import com.saidim.clockface.R
+import com.saidim.clockface.background.color.ColorSwatchAdapter
+import com.saidim.clockface.background.color.GradientColorSettings
 import com.saidim.clockface.background.unsplash.TopicPagerAdapter
 import com.saidim.clockface.background.unsplash.UnsplashTopics
 import com.saidim.clockface.background.video.VideoAdapter
@@ -23,11 +25,6 @@ import com.saidim.clockface.background.video.pexels.Video
 import com.saidim.clockface.base.BaseActivity
 import com.saidim.clockface.databinding.ActivityBackgroundSettingsBinding
 import com.saidim.clockface.utils.getBestVideoFile
-import com.saidim.clockface.background.color.ColorPickerDialog
-import com.saidim.clockface.background.color.GradientColorSettings
-import com.saidim.clockface.background.color.ColorSwatchAdapter
-import com.saidim.clockface.background.color.GradientDirection
-
 import kotlinx.coroutines.launch
 
 class BackgroundSettingsActivity : BaseActivity() {
@@ -70,11 +67,7 @@ class BackgroundSettingsActivity : BaseActivity() {
         binding.tabLayout.removeAllTabs()
         // Add tabs for each topic
         UnsplashTopics.topics.forEach { topic ->
-            binding.tabLayout.addTab(
-                binding.tabLayout.newTab().apply {
-                    text = topic
-                }
-            )
+            binding.tabLayout.addTab(binding.tabLayout.newTab().apply { text = topic })
         }
 
         // Setup ViewPager
@@ -82,7 +75,7 @@ class BackgroundSettingsActivity : BaseActivity() {
             topics = UnsplashTopics.topics,
             fragmentActivity = this
         )
-        
+
         binding.viewPager.apply {
             adapter = topicPagerAdapter
             offscreenPageLimit = 2  // Cache 2 pages on each side
@@ -107,23 +100,24 @@ class BackgroundSettingsActivity : BaseActivity() {
             setOnEditorActionListener { textView, actionId, event ->
                 when {
                     // Handle IME_ACTION_SEARCH or IME_ACTION_DONE
-                    actionId == EditorInfo.IME_ACTION_SEARCH || 
-                    actionId == EditorInfo.IME_ACTION_DONE -> {
+                    actionId == EditorInfo.IME_ACTION_SEARCH ||
+                            actionId == EditorInfo.IME_ACTION_DONE -> {
                         LogUtils.d("EditorInfo.IME_ACTION_SEARCH pressed")
                         handleVideoSearch(textView.text.toString())
                         true
                     }
                     // Handle Enter key press
-                    event?.keyCode == KeyEvent.KEYCODE_ENTER && 
-                    event.action == KeyEvent.ACTION_DOWN -> {
+                    event?.keyCode == KeyEvent.KEYCODE_ENTER &&
+                            event.action == KeyEvent.ACTION_DOWN -> {
                         LogUtils.d("KeyEvent.KEYCODE_ENTER pressed")
                         handleVideoSearch(textView.text.toString())
                         true
                     }
+
                     else -> false
                 }
             }
-            
+
             // Set IME options to show search action
             imeOptions = EditorInfo.IME_ACTION_SEARCH
         }
@@ -160,28 +154,24 @@ class BackgroundSettingsActivity : BaseActivity() {
             videoSourceCard.isVisible = type == BackgroundType.VIDEO
             colorSourceCard.isVisible = type == BackgroundType.COLOR
 
-            previewPlaceholder.isVisible = type == BackgroundType.COLOR
+            previewColor.isVisible = type == BackgroundType.COLOR
             previewImage.isVisible = type == BackgroundType.IMAGE
             previewVideo.isVisible = type == BackgroundType.VIDEO
         }
     }
 
     private fun observePreview() {
-        lifecycleScope.launch { 
-            viewModel.backgroundType.collect { type -> 
+        lifecycleScope.launch {
+            viewModel.backgroundType.collect { type ->
                 updateVisibility(type)
                 if (type == BackgroundType.COLOR) {
                     setupColorPreview()
                 }
-            } 
+            }
         }
         lifecycleScope.launch {
-            viewModel.selectedImages.collect { images ->
-                if (images.isNotEmpty()) {
-                    showImagePreview(images.first())
-                } else {
-                    showPlaceholder()
-                }
+            viewModel.selectedImage.collect { image ->
+                showImagePreview(image)
             }
         }
         lifecycleScope.launch {
@@ -199,7 +189,6 @@ class BackgroundSettingsActivity : BaseActivity() {
         binding.apply {
             previewImage.visibility = View.VISIBLE
             previewVideo.visibility = View.GONE
-            previewPlaceholder.visibility = View.GONE
 
             previewImage.load(image.getUrl()) {
                 crossfade(true)
@@ -211,7 +200,6 @@ class BackgroundSettingsActivity : BaseActivity() {
         binding.apply {
             previewImage.visibility = View.GONE
             previewVideo.visibility = View.VISIBLE
-            previewPlaceholder.visibility = View.GONE
 
             video.getBestVideoFile()?.let { videoFile ->
                 previewVideo.apply {
@@ -235,7 +223,6 @@ class BackgroundSettingsActivity : BaseActivity() {
         binding.apply {
             previewImage.visibility = View.GONE
             previewVideo.visibility = View.GONE
-            previewPlaceholder.visibility = View.VISIBLE
         }
     }
 
@@ -251,17 +238,16 @@ class BackgroundSettingsActivity : BaseActivity() {
 
     private fun updateColorBackground() {
         val settings = GradientColorSettings(
-            colors = viewModel.selectedColors.value,
+            colors = listOf(viewModel.selectedColor.value),
             direction = viewModel.gradientDirection.value,
             isAnimated = false,
             animationDuration = 10000,
             isThreeLayer = false
         )
         viewModel.updateGradientSettings(settings)
-        
+
         // Ensure preview is visible
         binding.apply {
-            previewPlaceholder.visibility = View.VISIBLE
             previewImage.visibility = View.GONE
             previewVideo.visibility = View.GONE
         }
@@ -314,49 +300,15 @@ class BackgroundSettingsActivity : BaseActivity() {
                     false
                 )
                 adapter = ColorSwatchAdapter { color ->
-                    viewModel.addSelectedColor(color)
+                    viewModel.selectColor(color)
+                    viewModel.colorModel.color = color
                 }
-            }
-
-            // Setup custom color picker
-            addColorButton.setOnClickListener {
-                val currentColor = viewModel.selectedColors.value.firstOrNull() ?: 0xFF000000.toInt()
-                ColorPickerDialog.newInstance(currentColor) { color ->
-                    viewModel.addSelectedColor(color)
-                }.show(supportFragmentManager, "colorPicker")
             }
 
             // Setup gradient toggle
+            gradientSwitch.isChecked = viewModel.colorModel.enableFluidColor
             gradientSwitch.setOnCheckedChangeListener { _, isChecked ->
-                viewModel.setGradientEnabled(isChecked)
-                // Show/hide gradient controls with animation
-                if (isChecked) {
-                    gradientControls.visibility = View.VISIBLE
-                    gradientControls.alpha = 0f
-                    gradientControls.animate()
-                        .alpha(1f)
-                        .setDuration(200)
-                        .start()
-                } else {
-                    gradientControls.animate()
-                        .alpha(0f)
-                        .setDuration(200)
-                        .withEndAction {
-                            gradientControls.visibility = View.GONE
-                        }
-                        .start()
-                }
-            }
-
-            // Setup gradient direction controls
-            directionChipGroup.setOnCheckedChangeListener { _, checkedId ->
-                val direction = when (checkedId) {
-                    R.id.topBottomChip -> GradientDirection.TOP_BOTTOM
-                    R.id.leftRightChip -> GradientDirection.LEFT_RIGHT
-                    R.id.diagonalChip -> GradientDirection.DIAGONAL
-                    else -> GradientDirection.TOP_BOTTOM
-                }
-                viewModel.updateGradientDirection(direction)
+                viewModel.colorModel.enableFluidColor = isChecked
             }
 
             // Submit default colors

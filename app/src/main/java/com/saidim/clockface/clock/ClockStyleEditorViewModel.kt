@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class ClockStyleEditorViewModel(application: Application) : AndroidViewModel(application) {
-    private val appSettings = AppSettings(application)
+    private val appSettings = AppSettings.instance
 
     private val _is24Hour = MutableStateFlow(true)
     val is24Hour: StateFlow<Boolean> = _is24Hour
@@ -45,7 +45,7 @@ class ClockStyleEditorViewModel(application: Application) : AndroidViewModel(app
     fun setTimeFormat(is24Hour: Boolean) {
         viewModelScope.launch {
             _is24Hour.value = is24Hour
-            appSettings.updateTimeFormat(is24Hour)
+            appSettings.update24Hour(is24Hour)
         }
     }
 

@@ -11,6 +11,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import com.saidim.clockface.clock.ClockStyleFormatter
+import com.saidim.clockface.settings.AppSettings
 
 class ClockViewModel : ViewModel() {
     private val _currentTime = MutableLiveData<String>()
@@ -24,6 +25,8 @@ class ClockViewModel : ViewModel() {
 
     private val _clockStyle = MutableLiveData<ClockStyle>(ClockStyle.MINIMAL)
     val clockStyle: LiveData<ClockStyle> = _clockStyle
+
+    val backgroundModel = AppSettings.instance.backgroundModel
 
     init {
         startClock()

@@ -1,20 +1,30 @@
 package com.saidim.clockface.settings
 
 import android.content.Context
+import android.graphics.Color
+import android.provider.CalendarContract.Colors
 import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.booleanPreferencesKey
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.intPreferencesKey
-import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
+import com.saidim.clockface.App
+import com.saidim.clockface.background.BackgroundType
 import com.saidim.clockface.background.model.BackgroundModel
+import com.squareup.moshi.Moshi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
-class AppSettings(private val context: Context) {
+class AppSettings {
+    private val context = App.instance
+    private val moshi = Moshi.Builder().build()
+
+    companion object {
+        val instance by lazy { AppSettings() }
+    }
+
     private object Keys {
         val SHOW_SECONDS = booleanPreferencesKey("show_seconds")
         val USE_24_HOUR = booleanPreferencesKey("use_24_hour")
@@ -33,126 +43,60 @@ class AppSettings(private val context: Context) {
         val BACKGROUND_MODEL = stringPreferencesKey("background_model")
     }
 
-    val showSeconds: Flow<Boolean> = context.dataStore.data
-        .map { preferences -> preferences[Keys.SHOW_SECONDS] ?: true }
+    // Generic functions for getting and setting preferences
+    private fun <T> getPreference(key: Preferences.Key<T>, defaultValue: T): Flow<T> =
+        context.dataStore.data.map { preferences ->
+            preferences[key] ?: defaultValue
+        }
 
-    val use24Hour: Flow<Boolean> = context.dataStore.data
-        .map { preferences -> preferences[Keys.USE_24_HOUR] ?: true }
-
-    val enableLandscape: Flow<Boolean> = context.dataStore.data
-        .map { preferences -> preferences[Keys.ENABLE_LANDSCAPE] ?: true }
-
-    val enableBlurhash: Flow<Boolean> = context.dataStore.data
-        .map { preferences -> preferences[Keys.ENABLE_BLURHASH] ?: true }
-
-    val enableAnimations: Flow<Boolean> = context.dataStore.data
-        .map { preferences -> preferences[Keys.ENABLE_ANIMATIONS] ?: true }
-
-    val clockStyle: Flow<Int> = context.dataStore.data
-        .map { preferences -> preferences[Keys.CLOCK_STYLE] ?: 0 }
-
-    val backgroundInterval: Flow<Int> = context.dataStore.data
-        .map { preferences -> preferences[Keys.BACKGROUND_INTERVAL] ?: 30 }
-
-    val backgroundType: Flow<Int> = context.dataStore.data
-        .map { preferences -> preferences[Keys.BACKGROUND_TYPE] ?: 0 }
-
-    val videoBackground: Flow<String?> = context.dataStore.data
-        .map { preferences -> preferences[Keys.VIDEO_BACKGROUND] }
-
-    suspend fun updateShowSeconds(show: Boolean) {
+    private suspend fun <T> setPreference(key: Preferences.Key<T>, value: T) {
         context.dataStore.edit { preferences ->
-            preferences[Keys.SHOW_SECONDS] = show
+            preferences[key] = value
         }
     }
 
-    suspend fun update24Hour(use24: Boolean) {
-        context.dataStore.edit { preferences ->
-            preferences[Keys.USE_24_HOUR] = use24
+    // Boolean preferences
+    val showSeconds = getPreference(Keys.SHOW_SECONDS, false)
+    val use24Hour = getPreference(Keys.USE_24_HOUR, false)
+    val enableLandscape = getPreference(Keys.ENABLE_LANDSCAPE, true)
+    val showAnalogNumbers = getPreference(Keys.SHOW_ANALOG_NUMBERS, true)
+    val showAnalogTicks = getPreference(Keys.SHOW_ANALOG_TICKS, true)
+    val useWordCasual = getPreference(Keys.USE_WORD_CASUAL, false)
+
+    // Int preferences
+    val clockStyle = getPreference(Keys.CLOCK_STYLE, 0)
+    val backgroundInterval = getPreference(Keys.BACKGROUND_INTERVAL, 30)
+    val backgroundType = getPreference(Keys.BACKGROUND_TYPE, 0)
+    val binaryColor = getPreference(Keys.BINARY_COLOR, 0xFF000000.toInt())
+
+    // String preferences
+    val backgroundModel = flow {
+        val json = getPreference(Keys.BACKGROUND_MODEL, "").first()
+        val type = backgroundType.first()
+        val model = when (type) {
+            BackgroundType.COLOR.ordinal -> moshi.adapter(BackgroundModel.ColorModel::class.java).fromJson(json)
+            BackgroundType.IMAGE.ordinal -> moshi.adapter(BackgroundModel.ColorModel::class.java).fromJson(json)
+            BackgroundType.VIDEO.ordinal -> moshi.adapter(BackgroundModel.ColorModel::class.java).fromJson(json)
+            else -> BackgroundModel.ColorModel()
         }
+        emit(model)
     }
 
-    suspend fun updateLandscape(enable: Boolean) {
-        context.dataStore.edit { preferences ->
-            preferences[Keys.ENABLE_LANDSCAPE] = enable
-        }
-    }
-
-    suspend fun updateBlurhash(enable: Boolean) {
-        context.dataStore.edit { preferences ->
-            preferences[Keys.ENABLE_BLURHASH] = enable
-        }
-    }
-
-    suspend fun updateAnimations(enable: Boolean) {
-        context.dataStore.edit { preferences ->
-            preferences[Keys.ENABLE_ANIMATIONS] = enable
-        }
-    }
-
-    suspend fun updateClockStyle(style: Int) {
-        context.dataStore.edit { preferences ->
-            preferences[Keys.CLOCK_STYLE] = style
-        }
-    }
-
-    suspend fun updateBackgroundInterval(minutes: Int) {
-        context.dataStore.edit { preferences ->
-            preferences[Keys.BACKGROUND_INTERVAL] = minutes
-        }
-    }
-
-    suspend fun updateTimeFormat(is24Hour: Boolean) {
-        context.dataStore.edit { preferences ->
-            preferences[Keys.USE_24_HOUR] = is24Hour
-        }
-    }
-
-    suspend fun updateAnalogNumbers(show: Boolean) {
-        context.dataStore.edit { preferences ->
-            preferences[Keys.SHOW_ANALOG_NUMBERS] = show
-        }
-    }
-
-    suspend fun updateAnalogTicks(show: Boolean) {
-        context.dataStore.edit { preferences ->
-            preferences[Keys.SHOW_ANALOG_TICKS] = show
-        }
-    }
-
-    suspend fun updateBinaryLabels(show: Boolean) {
-        context.dataStore.edit { preferences ->
-            preferences[Keys.SHOW_BINARY_LABELS] = show
-        }
-    }
-
-    suspend fun updateBinaryColor(color: Int) {
-        context.dataStore.edit { preferences ->
-            preferences[Keys.BINARY_COLOR] = color
-        }
-    }
-
-    suspend fun updateWordCasual(casual: Boolean) {
-        context.dataStore.edit { preferences ->
-            preferences[Keys.USE_WORD_CASUAL] = casual
-        }
-    }
-
-    suspend fun updateBackgroundType(type: Int) {
-        context.dataStore.edit { preferences ->
-            preferences[Keys.BACKGROUND_TYPE] = type
-        }
-    }
-
-    suspend fun updateVideoBackground(videoUrl: String) {
-        context.dataStore.edit { preferences ->
-            preferences[Keys.VIDEO_BACKGROUND] = videoUrl
-        }
-    }
-
-    suspend fun updateBackgroundModel(backgroundModel: BackgroundModel) {
-        context.dataStore.edit { preferences ->
-            preferences[Keys.BACKGROUND_MODEL] = backgroundModel.toJson()
-        }
-    }
+    // Update functions
+    suspend fun updateShowSeconds(value: Boolean) = setPreference(Keys.SHOW_SECONDS, value)
+    suspend fun update24Hour(value: Boolean) = setPreference(Keys.USE_24_HOUR, value)
+    suspend fun updateLandscape(value: Boolean) = setPreference(Keys.ENABLE_LANDSCAPE, value)
+    suspend fun updateBlurhash(value: Boolean) = setPreference(Keys.ENABLE_BLURHASH, value)
+    suspend fun updateAnimations(value: Boolean) = setPreference(Keys.ENABLE_ANIMATIONS, value)
+    suspend fun updateClockStyle(value: Int) = setPreference(Keys.CLOCK_STYLE, value)
+    suspend fun updateBackgroundInterval(value: Int) = setPreference(Keys.BACKGROUND_INTERVAL, value)
+    suspend fun updateAnalogNumbers(value: Boolean) = setPreference(Keys.SHOW_ANALOG_NUMBERS, value)
+    suspend fun updateAnalogTicks(value: Boolean) = setPreference(Keys.SHOW_ANALOG_TICKS, value)
+    suspend fun updateBinaryLabels(value: Boolean) = setPreference(Keys.SHOW_BINARY_LABELS, value)
+    suspend fun updateBinaryColor(value: Int) = setPreference(Keys.BINARY_COLOR, value)
+    suspend fun updateWordCasual(value: Boolean) = setPreference(Keys.USE_WORD_CASUAL, value)
+    suspend fun updateBackgroundType(value: Int) = setPreference(Keys.BACKGROUND_TYPE, value)
+    suspend fun updateVideoBackground(value: String) = setPreference(Keys.VIDEO_BACKGROUND, value)
+    suspend fun updateBackgroundModel(backgroundModel: BackgroundModel) =
+        setPreference(Keys.BACKGROUND_MODEL, backgroundModel.toJson())
 }

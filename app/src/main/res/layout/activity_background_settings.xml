@@ -41,14 +41,6 @@
                         android:layout_gravity="center"
                         android:visibility="gone"/>
 
-                <TextView
-                        android:id="@+id/previewPlaceholder"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        android:text="No background selected"
-                        android:textAppearance="?attr/textAppearanceBodyLarge"/>
-
             </FrameLayout>
 
             <com.google.android.material.appbar.MaterialToolbar
@@ -153,14 +145,6 @@
                             android:clipToPadding="false"
                             android:paddingHorizontal="4dp"/>
 
-                    <com.google.android.material.button.MaterialButton
-                            android:id="@+id/addColorButton"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:text="@string/add_custom_color"
-                            style="@style/Widget.Material3.Button.TextButton"/>
-
                     <!-- Gradient Controls -->
                     <com.google.android.material.divider.MaterialDivider
                             android:layout_width="match_parent"
@@ -185,36 +169,6 @@
                                 android:layout_height="wrap_content"
                                 android:text="@string/gradient_direction"
                                 android:textAppearance="?attr/textAppearanceBodyMedium"/>
-
-                        <com.google.android.material.chip.ChipGroup
-                                android:id="@+id/directionChipGroup"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="8dp"
-                                app:singleSelection="true">
-
-                            <com.google.android.material.chip.Chip
-                                    android:id="@+id/topBottomChip"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="@string/top_bottom"
-                                    style="@style/Widget.Material3.Chip.Filter"
-                                    android:checked="true"/>
-
-                            <com.google.android.material.chip.Chip
-                                    android:id="@+id/leftRightChip"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="@string/left_right"
-                                    style="@style/Widget.Material3.Chip.Filter"/>
-
-                            <com.google.android.material.chip.Chip
-                                    android:id="@+id/diagonalChip"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="@string/diagonal"
-                                    style="@style/Widget.Material3.Chip.Filter"/>
-                        </com.google.android.material.chip.ChipGroup>
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -283,4 +237,4 @@
             </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
-</androidx.coordinatorlayout.widget.CoordinatorLayout> 
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
