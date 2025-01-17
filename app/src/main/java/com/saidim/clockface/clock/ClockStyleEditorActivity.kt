@@ -9,8 +9,6 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.saidim.clockface.base.BaseActivity
 import com.saidim.clockface.databinding.ActivityClockStyleEditorBinding
-import com.skydoves.colorpickerview.ColorPickerDialog
-import com.skydoves.colorpickerview.listeners.ColorEnvelopeListener
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.*
@@ -154,16 +152,7 @@ class ClockStyleEditorActivity : BaseActivity() {
         return MaterialButton(this).apply {
             text = title
             setOnClickListener {
-                ColorPickerDialog.Builder(this@ClockStyleEditorActivity)
-                    .setTitle(title)
-                    .setPositiveButton("Select", ColorEnvelopeListener { envelope, _ ->
-                        onColorSelected(envelope.color)
-                    })
-                    .setNegativeButton("Cancel") { dialogInterface, _ ->
-                        dialogInterface.dismiss()
-                    }
-                    .attachAlphaSlideBar(false)
-                    .show()
+
             }
         }
     }
