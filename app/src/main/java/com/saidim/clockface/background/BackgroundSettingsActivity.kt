@@ -27,7 +27,7 @@ import com.saidim.clockface.background.color.ColorPickerDialog
 import com.saidim.clockface.background.color.GradientColorSettings
 import com.saidim.clockface.background.color.ColorSwatchAdapter
 import com.saidim.clockface.background.color.GradientDirection
-import kotlinx.coroutines.flow.StateFlow
+
 import kotlinx.coroutines.launch
 
 class BackgroundSettingsActivity : BaseActivity() {
@@ -163,10 +163,6 @@ class BackgroundSettingsActivity : BaseActivity() {
             previewPlaceholder.isVisible = type == BackgroundType.COLOR
             previewImage.isVisible = type == BackgroundType.IMAGE
             previewVideo.isVisible = type == BackgroundType.VIDEO
-
-            if (type == BackgroundType.VIDEO) {
-                viewModel.loadPexelsVideos("")
-            }
         }
     }
 

@@ -2,13 +2,13 @@ package com.saidim.clockface.settings
 
 import android.content.Context
 import androidx.datastore.core.DataStore
-import androidx.datastore.dataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.saidim.clockface.background.model.BackgroundModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -30,26 +30,27 @@ class AppSettings(private val context: Context) {
         val USE_WORD_CASUAL = booleanPreferencesKey("use_word_casual")
         val BACKGROUND_TYPE = intPreferencesKey("background_type")
         val VIDEO_BACKGROUND = stringPreferencesKey("video_background")
+        val BACKGROUND_MODEL = stringPreferencesKey("background_model")
     }
 
     val showSeconds: Flow<Boolean> = context.dataStore.data
         .map { preferences -> preferences[Keys.SHOW_SECONDS] ?: true }
-    
+
     val use24Hour: Flow<Boolean> = context.dataStore.data
         .map { preferences -> preferences[Keys.USE_24_HOUR] ?: true }
-    
+
     val enableLandscape: Flow<Boolean> = context.dataStore.data
         .map { preferences -> preferences[Keys.ENABLE_LANDSCAPE] ?: true }
-    
+
     val enableBlurhash: Flow<Boolean> = context.dataStore.data
         .map { preferences -> preferences[Keys.ENABLE_BLURHASH] ?: true }
-    
+
     val enableAnimations: Flow<Boolean> = context.dataStore.data
         .map { preferences -> preferences[Keys.ENABLE_ANIMATIONS] ?: true }
-    
+
     val clockStyle: Flow<Int> = context.dataStore.data
         .map { preferences -> preferences[Keys.CLOCK_STYLE] ?: 0 }
-    
+
     val backgroundInterval: Flow<Int> = context.dataStore.data
         .map { preferences -> preferences[Keys.BACKGROUND_INTERVAL] ?: 30 }
 
@@ -60,44 +61,44 @@ class AppSettings(private val context: Context) {
         .map { preferences -> preferences[Keys.VIDEO_BACKGROUND] }
 
     suspend fun updateShowSeconds(show: Boolean) {
-        context.dataStore.edit { preferences -> 
-            preferences[Keys.SHOW_SECONDS] = show 
+        context.dataStore.edit { preferences ->
+            preferences[Keys.SHOW_SECONDS] = show
         }
     }
 
     suspend fun update24Hour(use24: Boolean) {
-        context.dataStore.edit { preferences -> 
-            preferences[Keys.USE_24_HOUR] = use24 
+        context.dataStore.edit { preferences ->
+            preferences[Keys.USE_24_HOUR] = use24
         }
     }
 
     suspend fun updateLandscape(enable: Boolean) {
-        context.dataStore.edit { preferences -> 
-            preferences[Keys.ENABLE_LANDSCAPE] = enable 
+        context.dataStore.edit { preferences ->
+            preferences[Keys.ENABLE_LANDSCAPE] = enable
         }
     }
 
     suspend fun updateBlurhash(enable: Boolean) {
-        context.dataStore.edit { preferences -> 
-            preferences[Keys.ENABLE_BLURHASH] = enable 
+        context.dataStore.edit { preferences ->
+            preferences[Keys.ENABLE_BLURHASH] = enable
         }
     }
 
     suspend fun updateAnimations(enable: Boolean) {
-        context.dataStore.edit { preferences -> 
-            preferences[Keys.ENABLE_ANIMATIONS] = enable 
+        context.dataStore.edit { preferences ->
+            preferences[Keys.ENABLE_ANIMATIONS] = enable
         }
     }
 
     suspend fun updateClockStyle(style: Int) {
-        context.dataStore.edit { preferences -> 
-            preferences[Keys.CLOCK_STYLE] = style 
+        context.dataStore.edit { preferences ->
+            preferences[Keys.CLOCK_STYLE] = style
         }
     }
 
     suspend fun updateBackgroundInterval(minutes: Int) {
-        context.dataStore.edit { preferences -> 
-            preferences[Keys.BACKGROUND_INTERVAL] = minutes 
+        context.dataStore.edit { preferences ->
+            preferences[Keys.BACKGROUND_INTERVAL] = minutes
         }
     }
 
@@ -148,4 +149,10 @@ class AppSettings(private val context: Context) {
             preferences[Keys.VIDEO_BACKGROUND] = videoUrl
         }
     }
-} 
+
+    suspend fun updateBackgroundModel(backgroundModel: BackgroundModel) {
+        context.dataStore.edit { preferences ->
+            preferences[Keys.BACKGROUND_MODEL] = backgroundModel.toJson()
+        }
+    }
+}

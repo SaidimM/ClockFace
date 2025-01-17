@@ -6,6 +6,7 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.saidim.clockface.App
 import com.saidim.clockface.background.color.GradientColorSettings
 import com.saidim.clockface.background.color.GradientDirection
 import com.saidim.clockface.background.unsplash.UnsplashPhotoDto
@@ -26,6 +27,7 @@ class BackgroundSettingsViewModel(application: Application) : AndroidViewModel(a
     private val backgroundSlideshow = BackgroundSlideshow(application, viewModelScope)
     private val pexelsRepository = PexelsVideoRepository()
     private val unsplashRepository = UnsplashRepository()
+    private var backgroundModel = AppSettings(App.instance).backgroundType
 
     private val _selectedImages = MutableStateFlow<List<ImageItem>>(emptyList())
     val selectedImages: StateFlow<List<ImageItem>> = _selectedImages

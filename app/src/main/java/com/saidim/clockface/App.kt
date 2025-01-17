@@ -2,8 +2,13 @@ package com.saidim.clockface
 
 import android.app.Application
 
-class ClockFaceApplication : Application() {
+class App : Application() {
     override fun onCreate() {
         super.onCreate()
+        instance = this
+    }
+
+    companion object {
+        lateinit var instance: App
     }
 } 
