@@ -1,35 +1,34 @@
 [versions]
 # Core dependencies
-androidGradlePlugin = "8.7.2"
-fragmentKtx = "1.7.0"
+androidGradlePlugin = "8.7.3"
+fragmentKtx = "1.8.5"
 kotlin = "2.0.20"
-core-ktx = "1.13.1"
+core-ktx = "1.15.0"
 appcompat = "1.7.0"
 loggingInterceptor = "4.11.0"
-material = "1.11.0"
-activity = "1.9.3"
-activity-ktx = "1.9.3"
-constraintlayout = "2.1.4"
+material = "1.12.0"
+activity = "1.10.0"
+activity-ktx = "1.10.0"
+constraintlayout = "2.2.0"
 ksp = "2.0.20-1.0.25"
 
 # Lifecycle
-lifecycle = "2.8.6"
+lifecycle = "2.8.7"
 
 # Testing
 junit = "4.13.2"
 androidx-test-ext = "1.2.1"
-espresso = "3.5.1"
+espresso = "3.6.1"
 
 # Third party
 lottie = "6.4.0"
 moshiKotlin = "1.15.0"
 moshiKotlinCodegen = "1.15.0"
-retrofit = "2.9.0"
-coil = "2.5.0"
-datastore = "1.0.0"
-colorpicker = "2.3.0"
+retrofit = "2.11.0"
+coil = "2.7.0"
+datastore = "1.1.2"
 gson = "2.10.1"
-viewpager2 = "1.0.0"
+viewpager2 = "1.1.0"
 
 [libraries]
 # AndroidX
@@ -65,7 +64,6 @@ retrofit-converter-gson = { group = "com.squareup.retrofit2", name = "converter-
 coil = { group = "io.coil-kt", name = "coil", version.ref = "coil" }
 datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
 datastore-preferences-core = { group = "androidx.datastore", name = "datastore-preferences-core", version.ref = "datastore" }
-colorpicker = { group = "com.github.skydoves", name = "colorpickerview", version.ref = "colorpicker" }
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 
 [plugins]
