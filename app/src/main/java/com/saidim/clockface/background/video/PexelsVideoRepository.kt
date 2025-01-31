@@ -2,7 +2,6 @@ package com.saidim.clockface.background.video
 
 import android.util.Log
 import com.google.gson.GsonBuilder
-import com.saidim.clockface.background.video.pexels.Video
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -32,7 +31,7 @@ class PexelsVideoRepository {
         api = retrofit.create(PexelsApi::class.java)
     }
 
-    suspend fun searchVideos(query: String = ""): List<Video> {
+    suspend fun searchVideos(query: String = ""): List<PexelsVideo> {
         return try {
             LogUtils.d("searchVideos, query: $query")
             val data = if (query.isEmpty()) withContext(Dispatchers.IO) { api.popularVideos() }

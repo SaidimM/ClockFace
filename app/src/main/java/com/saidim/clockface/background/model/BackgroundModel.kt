@@ -1,7 +1,9 @@
 package com.saidim.clockface.background.model
 
 import android.graphics.Color
-import com.squareup.moshi.Moshi
+import android.graphics.drawable.ColorDrawable
+import com.google.gson.Gson
+import com.saidim.clockface.background.video.PexelsVideo
 
 sealed class BackgroundModel {
     data class ColorModel(
@@ -9,7 +11,8 @@ sealed class BackgroundModel {
         var color: Int = Color.BLACK,
         var enableFluidColor: Boolean = false,
     ) : BackgroundModel() {
-        override fun toJson(): String = Moshi.Builder().build().adapter(ColorModel::class.java).toJson(this)
+        override fun toJson(): String = Gson().toJson(this)
+        fun getDrawable() = ColorDrawable(color)
     }
 
     data class ImageModel(
@@ -18,13 +21,14 @@ sealed class BackgroundModel {
         var enableSlides: Boolean = false,
         var enableAnimation: Boolean = false,
     ) : BackgroundModel() {
-        override fun toJson(): String = Moshi.Builder().build().adapter(ImageModel::class.java).toJson(this)
+        override fun toJson(): String = Gson().toJson(this)
     }
 
     data class VideoModel(
         var url: String = "",
+        var pixelVideo: PexelsVideo = PexelsVideo()
     ) : BackgroundModel() {
-        override fun toJson(): String = Moshi.Builder().build().adapter(VideoModel::class.java).toJson(this)
+        override fun toJson(): String = Gson().toJson(this)
     }
 
     abstract fun toJson(): String

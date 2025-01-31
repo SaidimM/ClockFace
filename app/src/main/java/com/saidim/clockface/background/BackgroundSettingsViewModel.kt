@@ -2,7 +2,6 @@ package com.saidim.clockface.background
 
 import android.app.Application
 import android.graphics.Color
-import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -10,71 +9,56 @@ import com.saidim.clockface.background.color.GradientColorSettings
 import com.saidim.clockface.background.color.GradientDirection
 import com.saidim.clockface.background.model.BackgroundModel
 import com.saidim.clockface.background.unsplash.UnsplashPhotoDto
-import com.saidim.clockface.settings.AppSettings
-import com.saidim.clockface.background.video.PexelsVideoRepository
-import com.saidim.clockface.background.video.pexels.Video
-import com.saidim.clockface.utils.getBestVideoFile
 import com.saidim.clockface.background.unsplash.UnsplashRepository
+import com.saidim.clockface.background.video.PexelsVideoRepository
+import com.saidim.clockface.background.video.PexelsVideo
+import com.saidim.clockface.background.video.pexels.Video
+import com.saidim.clockface.settings.AppSettings
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 
 class BackgroundSettingsViewModel(application: Application) : AndroidViewModel(application) {
     private val appSettings = AppSettings.instance
-    private val backgroundSlideshow = BackgroundSlideshow(application, viewModelScope)
     private val pexelsRepository = PexelsVideoRepository()
     private val unsplashRepository = UnsplashRepository()
-    private var backgroundModel = appSettings.backgroundType
 
     val colorModel = BackgroundModel.ColorModel()
     val imageModel = BackgroundModel.ImageModel()
     val videoModel = BackgroundModel.VideoModel()
 
-    private val _selectedImage = MutableStateFlow<ImageItem>(ImageItem.DeviceImage(Uri.EMPTY))
-    val selectedImage: StateFlow<ImageItem> = _selectedImage
+    var colorSelected: (BackgroundModel.ColorModel) -> Unit = {}
+    var imageSelected: (BackgroundModel.ImageModel) -> Unit = {}
+    var videoSelected: (BackgroundModel.VideoModel) -> Unit = {}
+
+    private val _selectedImage = MutableStateFlow<BackgroundModel.ImageModel>(BackgroundModel.ImageModel())
+    val selectedImage: StateFlow<BackgroundModel.ImageModel> = _selectedImage
 
     private val _backgroundType = MutableStateFlow(BackgroundType.COLOR)
     val backgroundType: StateFlow<BackgroundType> = _backgroundType
 
-    private val _videos = MutableStateFlow<List<Video>>(emptyList())
-    val videos: StateFlow<List<Video>> = _videos
+    private val _videos = MutableStateFlow<List<PexelsVideo>>(emptyList())
+    val videos: StateFlow<List<PexelsVideo>> = _videos
 
     var hasLoadedVideos = false
         private set
 
-    private val _selectedVideo = MutableStateFlow<Video?>(null)
-    val selectedVideo: StateFlow<Video?> = _selectedVideo
-
-    private val _collectionPhotos = MutableStateFlow<List<ImageItem>>(emptyList())
-    val collectionPhotos: StateFlow<List<ImageItem>> = _collectionPhotos
-
-    private val _currentTopic = MutableStateFlow<String?>(null)
-    val currentTopic: StateFlow<String?> = _currentTopic
+    private val _selectedVideo = MutableStateFlow<PexelsVideo?>(null)
+    val selectedVideo: StateFlow<PexelsVideo?> = _selectedVideo
 
     private val _searchResults = MutableStateFlow<List<UnsplashPhotoDto>>(emptyList())
     val searchResults: StateFlow<List<UnsplashPhotoDto>> = _searchResults
 
-    private val _currentColor = MutableStateFlow(0xFF000000.toInt())
-    val currentColor: StateFlow<Int> = _currentColor
-
-    private val _gradientColors = MutableStateFlow(listOf(
-        0xFF6200EE.toInt(),
-        0xFF3700B3.toInt(),
-        0xFF03DAC5.toInt()
-    ))
-    val gradientColors: StateFlow<List<Int>> = _gradientColors
-
-    private val _gradientSettings = MutableStateFlow(
-        GradientColorSettings(gradientColors.value)
+    private val _gradientColors = MutableStateFlow(
+        listOf(
+            0xFF6200EE.toInt(),
+            0xFF3700B3.toInt(),
+            0xFF03DAC5.toInt()
+        )
     )
-    val gradientSettings: StateFlow<GradientColorSettings> = _gradientSettings
-
-    private val _selectedColor = MutableStateFlow<Int>(Color.BLACK)
-    val selectedColor: StateFlow<Int> = _selectedColor
-
-    private val _gradientDirection = MutableStateFlow(GradientDirection.TOP_BOTTOM)
-    val gradientDirection: StateFlow<GradientDirection> = _gradientDirection
+    val gradientColors: StateFlow<List<Int>> = _gradientColors
 
     private val _previewGradient = MutableStateFlow<FluidGradientDrawable?>(null)
     val previewGradient: StateFlow<FluidGradientDrawable?> = _previewGradient
@@ -85,18 +69,37 @@ class BackgroundSettingsViewModel(application: Application) : AndroidViewModel(a
     private val DEFAULT_COLOR = 0xFF000000.toInt()
 
     init {
-        _previewGradient.value = FluidGradientDrawable()
-    }
+        viewModelScope.launch {
+            // Load saved background type and model
+            _backgroundType.value = appSettings.backgroundType.first()
 
-    fun selectImage(newImages: ImageItem) {
-        _selectedImage.value = newImages
-        imageModel.imageUrl = newImages.getUrl()
-        updateBackgroundModel(imageModel)
+            // Load saved background model
+            appSettings.backgroundModel.first()?.let { model ->
+                when (model) {
+                    is BackgroundModel.ColorModel -> {
+                        colorModel.color = model.color
+                        updateColorBackground()
+                    }
+
+                    is BackgroundModel.ImageModel -> {
+                        // Load image preview
+                        _selectedImage.value = imageModel
+                    }
+
+                    is BackgroundModel.VideoModel -> {
+                        videoModel.url = model.url
+                        // Load PexelsVideo preview
+                        loadPexelsVideos("popular") // Load default videos
+                    }
+                }
+            }
+        }
     }
 
     fun setBackgroundType(type: BackgroundType) {
         viewModelScope.launch {
             _backgroundType.value = type
+            appSettings.updateBackgroundType(type.ordinal)
         }
     }
 
@@ -105,7 +108,7 @@ class BackgroundSettingsViewModel(application: Application) : AndroidViewModel(a
             try {
                 val videos = pexelsRepository.searchVideos(topic)
                 val videoIds = videos.joinToString(", ") { it.id.toString() }
-                Log.d(this.javaClass.simpleName, "query: $topic Video IDs: $videoIds")
+                Log.d(this.javaClass.simpleName, "query: $topic PexelsVideo IDs: $videoIds")
                 _videos.value = videos
                 hasLoadedVideos = true
             } catch (e: Exception) {
@@ -114,14 +117,22 @@ class BackgroundSettingsViewModel(application: Application) : AndroidViewModel(a
         }
     }
 
-    fun selectVideo(video: Video) {
+    fun selectColor(color: Int) {
         viewModelScope.launch {
-            _selectedVideo.value = video
-            videoModel.url = video.url
-            // Save selected video to preferences if needed
-            video.getBestVideoFile()?.let { videoFile ->
-                appSettings.updateVideoBackground(videoFile.link)
-            }
+            updateColorBackground()
+            updateBackgroundModel(colorModel)
+        }
+    }
+
+    fun selectImage(newImage: BackgroundModel.ImageModel) {
+        _selectedImage.value = newImage
+        imageModel.imageUrl = newImage.imageUrl
+        updateBackgroundModel(imageModel)
+    }
+
+    fun selectVideo(video: PexelsVideo) {
+        viewModelScope.launch {
+            videoModel.pixelVideo = video
             updateBackgroundModel(videoModel)
         }
     }
@@ -137,33 +148,20 @@ class BackgroundSettingsViewModel(application: Application) : AndroidViewModel(a
 
     fun updateGradientSettings(settings: GradientColorSettings) {
         viewModelScope.launch {
-            _selectedColor.value = Color.BLACK
-            _gradientDirection.value = settings.direction
             _previewGradient.value?.updateSettings(settings)
-        }
-    }
-
-    fun selectColor(color: Int) {
-        viewModelScope.launch {
-            _selectedColor.value = color
-            updateColorBackground()
-            updateBackgroundModel(colorModel)
         }
     }
 
     private fun updateColorBackground() {
         val settings = if (_isGradientEnabled.value) {
-            val color = _selectedColor.value
             GradientColorSettings(
-                colors = listOf(color),
-                direction = _gradientDirection.value,
+                colors = listOf(Color.BLACK, colorModel.color),
                 isAnimated = false,
                 isThreeLayer = false
             )
         } else {
-            val color = _selectedColor.value
             GradientColorSettings(
-                colors = listOf(color, color),
+                colors = listOf(Color.BLACK, colorModel.color),
                 isAnimated = false,
                 isThreeLayer = false
             )
@@ -172,10 +170,16 @@ class BackgroundSettingsViewModel(application: Application) : AndroidViewModel(a
     }
 
     fun updateBackgroundModel(model: BackgroundModel) {
-        val type = if (model is BackgroundModel.ColorModel) BackgroundType.COLOR else if (model is BackgroundModel.ImageModel) BackgroundType.IMAGE else BackgroundType.VIDEO
+        val type =
+            if (model is BackgroundModel.ColorModel) BackgroundType.COLOR else if (model is BackgroundModel.ImageModel) BackgroundType.IMAGE else BackgroundType.VIDEO
         viewModelScope.launch {
             appSettings.updateBackgroundType(type.ordinal)
             appSettings.updateBackgroundModel(model)
+        }
+        when (type) {
+            BackgroundType.COLOR -> colorSelected(model as BackgroundModel.ColorModel)
+            BackgroundType.IMAGE -> imageSelected(model as BackgroundModel.ImageModel)
+            BackgroundType.VIDEO -> videoSelected(model as BackgroundModel.VideoModel)
         }
     }
 } 

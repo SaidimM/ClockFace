@@ -2,9 +2,7 @@ package com.saidim.clockface.background.unsplash
 
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
-import androidx.lifecycle.Lifecycle
 import androidx.viewpager2.adapter.FragmentStateAdapter
-import androidx.fragment.app.FragmentManager
 
 class TopicPagerAdapter(
     private val topics: List<String>,

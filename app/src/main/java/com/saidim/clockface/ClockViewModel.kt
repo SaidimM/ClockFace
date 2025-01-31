@@ -1,8 +1,9 @@
 package com.saidim.clockface
 
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.saidim.clockface.clock.ClockStyle
 import kotlinx.coroutines.delay
@@ -12,8 +13,25 @@ import java.util.Date
 import java.util.Locale
 import com.saidim.clockface.clock.ClockStyleFormatter
 import com.saidim.clockface.settings.AppSettings
+import android.graphics.drawable.GradientDrawable
+import com.saidim.clockface.background.BackgroundType
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 
-class ClockViewModel : ViewModel() {
+class ClockViewModel(application: Application) : AndroidViewModel(application) {
+    private val appSettings = AppSettings.instance
+    
+    val backgroundType = appSettings.backgroundType
+        .stateIn(viewModelScope, SharingStarted.Eagerly, BackgroundType.COLOR)
+
+    private fun createGradientDrawable(color: Int): GradientDrawable {
+        return GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            colors = intArrayOf(color, color)
+        }
+    }
+
     private val _currentTime = MutableLiveData<String>()
     val currentTime: LiveData<String> = _currentTime
 

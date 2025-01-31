@@ -18,13 +18,12 @@ import com.google.android.material.tabs.TabLayoutMediator
 import com.saidim.clockface.R
 import com.saidim.clockface.background.color.ColorSwatchAdapter
 import com.saidim.clockface.background.color.GradientColorSettings
+import com.saidim.clockface.background.model.BackgroundModel
 import com.saidim.clockface.background.unsplash.TopicPagerAdapter
 import com.saidim.clockface.background.unsplash.UnsplashTopics
 import com.saidim.clockface.background.video.VideoAdapter
-import com.saidim.clockface.background.video.pexels.Video
 import com.saidim.clockface.base.BaseActivity
 import com.saidim.clockface.databinding.ActivityBackgroundSettingsBinding
-import com.saidim.clockface.utils.getBestVideoFile
 import kotlinx.coroutines.launch
 
 class BackgroundSettingsActivity : BaseActivity() {
@@ -42,6 +41,7 @@ class BackgroundSettingsActivity : BaseActivity() {
         setupColorControls()
         observeViewModel()
         observePreview()
+        restoreBackgroundState()
     }
 
     private fun setupToolbar() {
@@ -59,6 +59,47 @@ class BackgroundSettingsActivity : BaseActivity() {
                 }
                 viewModel.setBackgroundType(type)
             }
+        }
+    }
+
+    private fun setupColorControls() {
+        binding.apply {
+            // Setup color recycler view
+            colorRecyclerView.apply {
+                layoutManager = LinearLayoutManager(
+                    this@BackgroundSettingsActivity,
+                    LinearLayoutManager.HORIZONTAL,
+                    false
+                )
+                adapter = ColorSwatchAdapter { color ->
+                    viewModel.selectColor(color)
+                    viewModel.colorModel.color = color
+                }
+            }
+
+            // Setup gradient toggle
+            gradientSwitch.isChecked = viewModel.colorModel.enableFluidColor
+            gradientSwitch.setOnCheckedChangeListener { _, isChecked ->
+                viewModel.colorModel.enableFluidColor = isChecked
+            }
+
+            // Submit default colors
+            (colorRecyclerView.adapter as? ColorSwatchAdapter)?.submitList(
+                listOf(
+                    0xFFE57373.toInt(), // Red
+                    0xFF81C784.toInt(), // Green
+                    0xFF64B5F6.toInt(), // Blue
+                    0xFFFFB74D.toInt(), // Orange
+                    0xFF9575CD.toInt(), // Purple
+                    0xFF4DB6AC.toInt(), // Teal
+                    0xFFF06292.toInt(), // Pink
+                    0xFFFFD54F.toInt()  // Yellow
+                )
+            )
+
+            // Initially hide gradient controls
+            gradientControls.visibility = View.GONE
+            gradientControls.alpha = 0f
         }
     }
 
@@ -161,6 +202,9 @@ class BackgroundSettingsActivity : BaseActivity() {
     }
 
     private fun observePreview() {
+        viewModel.colorSelected = { showColorPreview(it) }
+        viewModel.imageSelected = { showImagePreview(it) }
+        viewModel.videoSelected = { showVideoPreview(it) }
         lifecycleScope.launch {
             viewModel.backgroundType.collect { type ->
                 updateVisibility(type)
@@ -177,7 +221,7 @@ class BackgroundSettingsActivity : BaseActivity() {
         lifecycleScope.launch {
             viewModel.selectedVideo.collect { video ->
                 if (video != null) {
-                    showVideoPreview(video)
+                    showVideoPreview(BackgroundModel.VideoModel(pixelVideo = video))
                 } else {
                     showPlaceholder()
                 }
@@ -185,23 +229,29 @@ class BackgroundSettingsActivity : BaseActivity() {
         }
     }
 
-    private fun showImagePreview(image: ImageItem) {
+    private fun showColorPreview(colorModel: BackgroundModel.ColorModel) {
         binding.apply {
-            previewImage.visibility = View.VISIBLE
+            previewColor.visibility = View.VISIBLE
+            previewImage.visibility = View.GONE
             previewVideo.visibility = View.GONE
-
-            previewImage.load(image.getUrl()) {
-                crossfade(true)
-            }
+            previewColor.background = colorModel.getDrawable()
         }
     }
 
-    private fun showVideoPreview(video: Video) {
+    private fun showImagePreview(image: BackgroundModel.ImageModel) {
+        binding.apply {
+            previewImage.visibility = View.VISIBLE
+            previewVideo.visibility = View.GONE
+            previewImage.load(image.imageUrl) { crossfade(true) }
+        }
+    }
+
+    private fun showVideoPreview(video: BackgroundModel.VideoModel) {
         binding.apply {
             previewImage.visibility = View.GONE
             previewVideo.visibility = View.VISIBLE
 
-            video.getBestVideoFile()?.let { videoFile ->
+            video.pixelVideo.getBestVideoFile()?.let { videoFile ->
                 previewVideo.apply {
                     setVideoPath(videoFile.link)
                     setOnPreparedListener { mediaPlayer ->
@@ -229,27 +279,8 @@ class BackgroundSettingsActivity : BaseActivity() {
     private fun setupColorPreview() {
         lifecycleScope.launch {
             viewModel.previewGradient.collect { gradientDrawable ->
-                gradientDrawable?.let {
-                    binding.previewColor.background = it
-                }
+                gradientDrawable?.let { binding.previewColor.background = it }
             }
-        }
-    }
-
-    private fun updateColorBackground() {
-        val settings = GradientColorSettings(
-            colors = listOf(viewModel.selectedColor.value),
-            direction = viewModel.gradientDirection.value,
-            isAnimated = false,
-            animationDuration = 10000,
-            isThreeLayer = false
-        )
-        viewModel.updateGradientSettings(settings)
-
-        // Ensure preview is visible
-        binding.apply {
-            previewImage.visibility = View.GONE
-            previewVideo.visibility = View.GONE
         }
     }
 
@@ -264,6 +295,12 @@ class BackgroundSettingsActivity : BaseActivity() {
         viewModel.previewGradient.value?.let { gradient ->
             gradient.updateSettings(gradient.settings.copy(isAnimated = false))
         }
+        // Save current background state
+        when (viewModel.backgroundType.value) {
+            BackgroundType.COLOR -> viewModel.updateBackgroundModel(viewModel.colorModel)
+            BackgroundType.IMAGE -> viewModel.updateBackgroundModel(viewModel.imageModel)
+            BackgroundType.VIDEO -> viewModel.updateBackgroundModel(viewModel.videoModel)
+        }
     }
 
     override fun onResume() {
@@ -273,9 +310,6 @@ class BackgroundSettingsActivity : BaseActivity() {
             if (visibility == View.VISIBLE && !isPlaying) {
                 start()
             }
-        }
-        if (viewModel.backgroundType.value == BackgroundType.COLOR) {
-            updateColorBackground()
         }
     }
 
@@ -290,44 +324,19 @@ class BackgroundSettingsActivity : BaseActivity() {
         }
     }
 
-    private fun setupColorControls() {
-        binding.apply {
-            // Setup color recycler view
-            colorRecyclerView.apply {
-                layoutManager = LinearLayoutManager(
-                    this@BackgroundSettingsActivity,
-                    LinearLayoutManager.HORIZONTAL,
-                    false
+    private fun restoreBackgroundState() {
+        lifecycleScope.launch {
+            viewModel.backgroundType.collect { type ->
+                // Update UI based on background type
+                binding.backgroundTypeSegmentedButton.check(
+                    when (type) {
+                        BackgroundType.COLOR -> R.id.noneButton
+                        BackgroundType.IMAGE -> R.id.imageButton
+                        BackgroundType.VIDEO -> R.id.videoButton
+                    }
                 )
-                adapter = ColorSwatchAdapter { color ->
-                    viewModel.selectColor(color)
-                    viewModel.colorModel.color = color
-                }
+                updateVisibility(type)
             }
-
-            // Setup gradient toggle
-            gradientSwitch.isChecked = viewModel.colorModel.enableFluidColor
-            gradientSwitch.setOnCheckedChangeListener { _, isChecked ->
-                viewModel.colorModel.enableFluidColor = isChecked
-            }
-
-            // Submit default colors
-            (colorRecyclerView.adapter as? ColorSwatchAdapter)?.submitList(
-                listOf(
-                    0xFFE57373.toInt(), // Red
-                    0xFF81C784.toInt(), // Green
-                    0xFF64B5F6.toInt(), // Blue
-                    0xFFFFB74D.toInt(), // Orange
-                    0xFF9575CD.toInt(), // Purple
-                    0xFF4DB6AC.toInt(), // Teal
-                    0xFFF06292.toInt(), // Pink
-                    0xFFFFD54F.toInt()  // Yellow
-                )
-            )
-
-            // Initially hide gradient controls
-            gradientControls.visibility = View.GONE
-            gradientControls.alpha = 0f
         }
     }
 } 

@@ -1,10 +1,10 @@
 package com.saidim.clockface.background.unsplash
 
-import com.squareup.moshi.Moshi
+import com.google.gson.Gson
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
-import retrofit2.converter.moshi.MoshiConverterFactory
+import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 class UnsplashRepository {
@@ -21,12 +21,10 @@ class UnsplashRepository {
             .readTimeout(15, TimeUnit.SECONDS)
             .build()
 
-        val moshi = Moshi.Builder().build()
-
         val retrofit = Retrofit.Builder()
             .baseUrl(UnsplashApi.BASE_URL)
             .client(client)
-            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .addConverterFactory(GsonConverterFactory.create(Gson()))
             .build()
 
         api = retrofit.create(UnsplashApi::class.java)

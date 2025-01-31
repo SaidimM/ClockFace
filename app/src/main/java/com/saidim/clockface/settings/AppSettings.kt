@@ -1,15 +1,13 @@
 package com.saidim.clockface.settings
 
 import android.content.Context
-import android.graphics.Color
-import android.provider.CalendarContract.Colors
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
+import com.google.gson.Gson
 import com.saidim.clockface.App
 import com.saidim.clockface.background.BackgroundType
 import com.saidim.clockface.background.model.BackgroundModel
-import com.squareup.moshi.Moshi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
@@ -19,7 +17,6 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 
 class AppSettings {
     private val context = App.instance
-    private val moshi = Moshi.Builder().build()
 
     companion object {
         val instance by lazy { AppSettings() }
@@ -66,7 +63,7 @@ class AppSettings {
     // Int preferences
     val clockStyle = getPreference(Keys.CLOCK_STYLE, 0)
     val backgroundInterval = getPreference(Keys.BACKGROUND_INTERVAL, 30)
-    val backgroundType = getPreference(Keys.BACKGROUND_TYPE, 0)
+    val backgroundType = getPreference(Keys.BACKGROUND_TYPE, 0).map { BackgroundType.entries[it] }
     val binaryColor = getPreference(Keys.BINARY_COLOR, 0xFF000000.toInt())
 
     // String preferences
@@ -74,10 +71,9 @@ class AppSettings {
         val json = getPreference(Keys.BACKGROUND_MODEL, "").first()
         val type = backgroundType.first()
         val model = when (type) {
-            BackgroundType.COLOR.ordinal -> moshi.adapter(BackgroundModel.ColorModel::class.java).fromJson(json)
-            BackgroundType.IMAGE.ordinal -> moshi.adapter(BackgroundModel.ColorModel::class.java).fromJson(json)
-            BackgroundType.VIDEO.ordinal -> moshi.adapter(BackgroundModel.ColorModel::class.java).fromJson(json)
-            else -> BackgroundModel.ColorModel()
+            BackgroundType.COLOR -> Gson().fromJson(json, BackgroundModel.ColorModel::class.java)
+            BackgroundType.IMAGE -> Gson().fromJson(json, BackgroundModel.ImageModel::class.java)
+            BackgroundType.VIDEO -> Gson().fromJson(json, BackgroundModel.VideoModel::class.java)
         }
         emit(model)
     }
@@ -96,7 +92,6 @@ class AppSettings {
     suspend fun updateBinaryColor(value: Int) = setPreference(Keys.BINARY_COLOR, value)
     suspend fun updateWordCasual(value: Boolean) = setPreference(Keys.USE_WORD_CASUAL, value)
     suspend fun updateBackgroundType(value: Int) = setPreference(Keys.BACKGROUND_TYPE, value)
-    suspend fun updateVideoBackground(value: String) = setPreference(Keys.VIDEO_BACKGROUND, value)
     suspend fun updateBackgroundModel(backgroundModel: BackgroundModel) =
         setPreference(Keys.BACKGROUND_MODEL, backgroundModel.toJson())
 }

@@ -11,11 +11,10 @@ import androidx.recyclerview.widget.RecyclerView
 import coil.load
 import com.google.android.material.card.MaterialCardView
 import com.saidim.clockface.R
-import com.saidim.clockface.background.video.pexels.Video
 
 class VideoAdapter(
-    private val onVideoSelected: (Video) -> Unit
-) : ListAdapter<Video, VideoAdapter.VideoViewHolder>(VideoDiffCallback()) {
+    private val onVideoSelected: (PexelsVideo) -> Unit
+) : ListAdapter<PexelsVideo, VideoAdapter.VideoViewHolder>(VideoDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VideoViewHolder {
         val view = LayoutInflater.from(parent.context)
@@ -32,12 +31,12 @@ class VideoAdapter(
         private val durationText: TextView = itemView.findViewById(R.id.durationText)
         private val card: MaterialCardView = itemView.findViewById(R.id.card)
 
-        fun bind(video: Video) {
-            thumbnailImage.load(video.video_pictures[0].picture) {
+        fun bind(video: PexelsVideo) {
+            thumbnailImage.load(video.thumbnail) {
                 crossfade(true)
                 placeholder(R.drawable.placeholder_image)
             }
-            
+
             durationText.text = formatDuration(video.duration)
             card.setOnClickListener { onVideoSelected(video) }
         }
@@ -49,12 +48,12 @@ class VideoAdapter(
         }
     }
 
-    private class VideoDiffCallback : DiffUtil.ItemCallback<Video>() {
-        override fun areItemsTheSame(oldItem: Video, newItem: Video): Boolean {
+    private class VideoDiffCallback : DiffUtil.ItemCallback<PexelsVideo>() {
+        override fun areItemsTheSame(oldItem: PexelsVideo, newItem: PexelsVideo): Boolean {
             return oldItem.id == newItem.id
         }
 
-        override fun areContentsTheSame(oldItem: Video, newItem: Video): Boolean {
+        override fun areContentsTheSame(oldItem: PexelsVideo, newItem: PexelsVideo): Boolean {
             return oldItem == newItem
         }
     }

@@ -74,10 +74,5 @@ dependencies {
     
     // ViewPager2
     implementation(libs.androidx.viewpager2)
-    implementation (libs.converter.moshi)
     implementation (libs.logging.interceptor)
-
-    // Moshi
-    implementation (libs.moshi.kotlin)
-    ksp (libs.moshi.kotlin.codegen)
 }

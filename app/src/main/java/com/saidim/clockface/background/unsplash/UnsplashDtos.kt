@@ -1,45 +1,37 @@
 package com.saidim.clockface.background.unsplash
 
-import com.squareup.moshi.Json
-import com.squareup.moshi.JsonClass
-
-@JsonClass(generateAdapter = true)
 data class UnsplashSearchResultDto(
-    @Json(name = "total") val total: Int,
-    @Json(name = "total_pages") val totalPages: Int,
-    @Json(name = "results") val results: List<UnsplashPhotoDto>
+    val total: Int,
+    val totalPages: Int,
+    val results: List<UnsplashPhotoDto>
 )
 
-@JsonClass(generateAdapter = true)
 data class UnsplashPhotoDto(
-    @Json(name = "id") val id: String,
-    @Json(name = "urls") val urls: PhotoUrlsDto,
-    @Json(name = "user") val user: UserDto,
-    @Json(name = "blur_hash") val blurHash: String
+    val id: String,
+    val urls: PhotoUrlsDto,
+    val user: UserDto,
+    val blurHash: String
 )
 
-@JsonClass(generateAdapter = true)
 data class PhotoUrlsDto(
-    @Json(name = "raw") val raw: String,
-    @Json(name = "full") val full: String,
-    @Json(name = "regular") val regular: String,
-    @Json(name = "small") val small: String,
-    @Json(name = "thumb") val thumb: String
+    val raw: String,
+    val full: String,
+    val regular: String,
+    val small: String,
+    val thumb: String
 )
 
-@JsonClass(generateAdapter = true)
 data class UserDto(
-    @Json(name = "id") val id: String,
-    @Json(name = "username") val username: String,
-    @Json(name = "name") val name: String,
-    @Json(name = "portfolio_url") val portfolioUrl: String?,
-    @Json(name = "bio") val bio: String?,
-    @Json(name = "location") val location: String?
+    val id: String,
+    val username: String,
+    val name: String,
+    val portfolioUrl: String?,
+    val bio: String?,
+    val location: String?
 )
 
-@JsonClass(generateAdapter = true)
 data class UnsplashCollectionDto(
-    @Json(name = "id") val id: String,
-    @Json(name = "title") val title: String,
-    @Json(name = "cover_photo") val coverPhoto: UnsplashPhotoDto
+    val id: String,
+    val title: String,
+    val coverPhoto: UnsplashPhotoDto
 )
