@@ -23,7 +23,6 @@ class ClockViewModel(application: Application) : AndroidViewModel(application) {
     private val appSettings = AppSettings.instance
     
     val backgroundType = appSettings.backgroundType
-        .stateIn(viewModelScope, SharingStarted.Eagerly, BackgroundType.COLOR)
 
     private fun createGradientDrawable(color: Int): GradientDrawable {
         return GradientDrawable().apply {

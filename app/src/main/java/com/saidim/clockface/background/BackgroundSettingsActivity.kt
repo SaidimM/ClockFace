@@ -17,7 +17,6 @@ import coil.load
 import com.google.android.material.tabs.TabLayoutMediator
 import com.saidim.clockface.R
 import com.saidim.clockface.background.color.ColorSwatchAdapter
-import com.saidim.clockface.background.color.GradientColorSettings
 import com.saidim.clockface.background.model.BackgroundModel
 import com.saidim.clockface.background.unsplash.TopicPagerAdapter
 import com.saidim.clockface.background.unsplash.UnsplashTopics
@@ -73,7 +72,6 @@ class BackgroundSettingsActivity : BaseActivity() {
                 )
                 adapter = ColorSwatchAdapter { color ->
                     viewModel.selectColor(color)
-                    viewModel.colorModel.color = color
                 }
             }
 
@@ -189,12 +187,16 @@ class BackgroundSettingsActivity : BaseActivity() {
         }
     }
 
-    private fun updateVisibility(type: BackgroundType) {
+    private fun updateEditorVisibility(type: BackgroundType) {
         binding.apply {
             imageSourceCard.isVisible = type == BackgroundType.IMAGE
             videoSourceCard.isVisible = type == BackgroundType.VIDEO
             colorSourceCard.isVisible = type == BackgroundType.COLOR
+        }
+    }
 
+    private fun updatePreviewVisibility(type: BackgroundType) {
+        binding.apply {
             previewColor.isVisible = type == BackgroundType.COLOR
             previewImage.isVisible = type == BackgroundType.IMAGE
             previewVideo.isVisible = type == BackgroundType.VIDEO
@@ -207,50 +209,31 @@ class BackgroundSettingsActivity : BaseActivity() {
         viewModel.videoSelected = { showVideoPreview(it) }
         lifecycleScope.launch {
             viewModel.backgroundType.collect { type ->
-                updateVisibility(type)
+                updateEditorVisibility(type)
                 if (type == BackgroundType.COLOR) {
                     setupColorPreview()
-                }
-            }
-        }
-        lifecycleScope.launch {
-            viewModel.selectedImage.collect { image ->
-                showImagePreview(image)
-            }
-        }
-        lifecycleScope.launch {
-            viewModel.selectedVideo.collect { video ->
-                if (video != null) {
-                    showVideoPreview(BackgroundModel.VideoModel(pixelVideo = video))
-                } else {
-                    showPlaceholder()
                 }
             }
         }
     }
 
     private fun showColorPreview(colorModel: BackgroundModel.ColorModel) {
+        updatePreviewVisibility(BackgroundType.COLOR)
         binding.apply {
-            previewColor.visibility = View.VISIBLE
-            previewImage.visibility = View.GONE
-            previewVideo.visibility = View.GONE
             previewColor.background = colorModel.getDrawable()
         }
     }
 
     private fun showImagePreview(image: BackgroundModel.ImageModel) {
+        updatePreviewVisibility(BackgroundType.IMAGE)
         binding.apply {
-            previewImage.visibility = View.VISIBLE
-            previewVideo.visibility = View.GONE
             previewImage.load(image.imageUrl) { crossfade(true) }
         }
     }
 
     private fun showVideoPreview(video: BackgroundModel.VideoModel) {
+        updatePreviewVisibility(BackgroundType.VIDEO)
         binding.apply {
-            previewImage.visibility = View.GONE
-            previewVideo.visibility = View.VISIBLE
-
             video.pixelVideo.getBestVideoFile()?.let { videoFile ->
                 previewVideo.apply {
                     setVideoPath(videoFile.link)
@@ -287,11 +270,7 @@ class BackgroundSettingsActivity : BaseActivity() {
     override fun onPause() {
         super.onPause()
         // Pause video and gradient animations
-        binding.previewVideo.apply {
-            if (isPlaying) {
-                pause()
-            }
-        }
+        binding.previewVideo.apply { if (isPlaying) pause() }
         viewModel.previewGradient.value?.let { gradient ->
             gradient.updateSettings(gradient.settings.copy(isAnimated = false))
         }
@@ -306,11 +285,7 @@ class BackgroundSettingsActivity : BaseActivity() {
     override fun onResume() {
         super.onResume()
         // Resume video and gradient animations if needed
-        binding.previewVideo.apply {
-            if (visibility == View.VISIBLE && !isPlaying) {
-                start()
-            }
-        }
+        binding.previewVideo.apply { if (visibility == View.VISIBLE && !isPlaying) start() }
     }
 
     override fun onDestroy() {
@@ -335,7 +310,7 @@ class BackgroundSettingsActivity : BaseActivity() {
                         BackgroundType.VIDEO -> R.id.videoButton
                     }
                 )
-                updateVisibility(type)
+                updateEditorVisibility(type)
             }
         }
     }

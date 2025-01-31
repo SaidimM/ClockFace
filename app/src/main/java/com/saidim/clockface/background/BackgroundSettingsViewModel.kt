@@ -33,9 +33,6 @@ class BackgroundSettingsViewModel(application: Application) : AndroidViewModel(a
     var imageSelected: (BackgroundModel.ImageModel) -> Unit = {}
     var videoSelected: (BackgroundModel.VideoModel) -> Unit = {}
 
-    private val _selectedImage = MutableStateFlow<BackgroundModel.ImageModel>(BackgroundModel.ImageModel())
-    val selectedImage: StateFlow<BackgroundModel.ImageModel> = _selectedImage
-
     private val _backgroundType = MutableStateFlow(BackgroundType.COLOR)
     val backgroundType: StateFlow<BackgroundType> = _backgroundType
 
@@ -43,22 +40,9 @@ class BackgroundSettingsViewModel(application: Application) : AndroidViewModel(a
     val videos: StateFlow<List<PexelsVideo>> = _videos
 
     var hasLoadedVideos = false
-        private set
-
-    private val _selectedVideo = MutableStateFlow<PexelsVideo?>(null)
-    val selectedVideo: StateFlow<PexelsVideo?> = _selectedVideo
 
     private val _searchResults = MutableStateFlow<List<UnsplashPhotoDto>>(emptyList())
     val searchResults: StateFlow<List<UnsplashPhotoDto>> = _searchResults
-
-    private val _gradientColors = MutableStateFlow(
-        listOf(
-            0xFF6200EE.toInt(),
-            0xFF3700B3.toInt(),
-            0xFF03DAC5.toInt()
-        )
-    )
-    val gradientColors: StateFlow<List<Int>> = _gradientColors
 
     private val _previewGradient = MutableStateFlow<FluidGradientDrawable?>(null)
     val previewGradient: StateFlow<FluidGradientDrawable?> = _previewGradient
@@ -66,33 +50,13 @@ class BackgroundSettingsViewModel(application: Application) : AndroidViewModel(a
     private val _isGradientEnabled = MutableStateFlow(false)
     val isGradientEnabled: StateFlow<Boolean> = _isGradientEnabled
 
-    private val DEFAULT_COLOR = 0xFF000000.toInt()
-
     init {
         viewModelScope.launch {
             // Load saved background type and model
             _backgroundType.value = appSettings.backgroundType.first()
 
             // Load saved background model
-            appSettings.backgroundModel.first()?.let { model ->
-                when (model) {
-                    is BackgroundModel.ColorModel -> {
-                        colorModel.color = model.color
-                        updateColorBackground()
-                    }
-
-                    is BackgroundModel.ImageModel -> {
-                        // Load image preview
-                        _selectedImage.value = imageModel
-                    }
-
-                    is BackgroundModel.VideoModel -> {
-                        videoModel.url = model.url
-                        // Load PexelsVideo preview
-                        loadPexelsVideos("popular") // Load default videos
-                    }
-                }
-            }
+            appSettings.backgroundModel.first()?.let { model -> updateBackgroundModel(model) }
         }
     }
 
@@ -119,21 +83,26 @@ class BackgroundSettingsViewModel(application: Application) : AndroidViewModel(a
 
     fun selectColor(color: Int) {
         viewModelScope.launch {
+            colorModel.color = color
             updateColorBackground()
+            colorSelected(colorModel)
             updateBackgroundModel(colorModel)
         }
     }
 
     fun selectImage(newImage: BackgroundModel.ImageModel) {
-        _selectedImage.value = newImage
-        imageModel.imageUrl = newImage.imageUrl
-        updateBackgroundModel(imageModel)
+        viewModelScope.launch {
+            imageModel.imageUrl = newImage.imageUrl
+            updateBackgroundModel(imageModel)
+            imageSelected(imageModel)
+        }
     }
 
     fun selectVideo(video: PexelsVideo) {
         viewModelScope.launch {
             videoModel.pixelVideo = video
             updateBackgroundModel(videoModel)
+            videoSelected(videoModel)
         }
     }
 
@@ -175,11 +144,7 @@ class BackgroundSettingsViewModel(application: Application) : AndroidViewModel(a
         viewModelScope.launch {
             appSettings.updateBackgroundType(type.ordinal)
             appSettings.updateBackgroundModel(model)
-        }
-        when (type) {
-            BackgroundType.COLOR -> colorSelected(model as BackgroundModel.ColorModel)
-            BackgroundType.IMAGE -> imageSelected(model as BackgroundModel.ImageModel)
-            BackgroundType.VIDEO -> videoSelected(model as BackgroundModel.VideoModel)
+            LogUtils.d(this.javaClass.simpleName, model.toString())
         }
     }
 } 
