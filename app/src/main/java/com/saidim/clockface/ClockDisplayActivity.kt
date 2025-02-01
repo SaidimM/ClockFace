@@ -3,14 +3,14 @@ package com.saidim.clockface
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.view.View
+import android.widget.ImageView
 import android.widget.TextView
+import android.widget.VideoView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import coil.ImageLoader
-import android.widget.ImageView
-import android.widget.VideoView
 import androidx.lifecycle.lifecycleScope
+import coil.ImageLoader
 import coil.load
 import com.saidim.clockface.background.BackgroundType
 import com.saidim.clockface.background.model.BackgroundModel
@@ -95,7 +95,7 @@ class ClockDisplayActivity : AppCompatActivity() {
                 previewColor.visibility = View.GONE
                 previewImage.visibility = View.VISIBLE
                 previewVideo.visibility = View.GONE
-                
+
                 previewImage.load((imageUrl as BackgroundModel.ImageModel).imageUrl) { crossfade(true) }
             }
         }

@@ -1,27 +1,22 @@
 package com.saidim.clockface
 
 import android.app.Application
+import android.graphics.drawable.GradientDrawable
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.saidim.clockface.clock.ClockStyle
+import com.saidim.clockface.clock.ClockStyleFormatter
+import com.saidim.clockface.settings.AppSettings
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import com.saidim.clockface.clock.ClockStyleFormatter
-import com.saidim.clockface.settings.AppSettings
-import android.graphics.drawable.GradientDrawable
-import com.saidim.clockface.background.BackgroundType
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
+import java.util.*
 
 class ClockViewModel(application: Application) : AndroidViewModel(application) {
     private val appSettings = AppSettings.instance
-    
+
     val backgroundType = appSettings.backgroundType
 
     private fun createGradientDrawable(color: Int): GradientDrawable {
@@ -68,6 +63,7 @@ class ClockViewModel(application: Application) : AndroidViewModel(application) {
                 }
                 SimpleDateFormat(pattern, Locale.getDefault()).format(currentDate)
             }
+
             else -> ClockStyleFormatter.formatTime(clockStyle.value ?: ClockStyle.MINIMAL, currentDate)
         }
     }

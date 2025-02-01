@@ -6,13 +6,11 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.saidim.clockface.background.color.GradientColorSettings
-import com.saidim.clockface.background.color.GradientDirection
 import com.saidim.clockface.background.model.BackgroundModel
 import com.saidim.clockface.background.unsplash.UnsplashPhotoDto
 import com.saidim.clockface.background.unsplash.UnsplashRepository
-import com.saidim.clockface.background.video.PexelsVideoRepository
 import com.saidim.clockface.background.video.PexelsVideo
-import com.saidim.clockface.background.video.pexels.Video
+import com.saidim.clockface.background.video.PexelsVideoRepository
 import com.saidim.clockface.settings.AppSettings
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,9 +23,9 @@ class BackgroundSettingsViewModel(application: Application) : AndroidViewModel(a
     private val pexelsRepository = PexelsVideoRepository()
     private val unsplashRepository = UnsplashRepository()
 
-    val colorModel = BackgroundModel.ColorModel()
-    val imageModel = BackgroundModel.ImageModel()
-    val videoModel = BackgroundModel.VideoModel()
+    var colorModel = BackgroundModel.ColorModel()
+    var imageModel = BackgroundModel.ImageModel()
+    var videoModel = BackgroundModel.VideoModel()
 
     var colorSelected: (BackgroundModel.ColorModel) -> Unit = {}
     var imageSelected: (BackgroundModel.ImageModel) -> Unit = {}
@@ -52,11 +50,15 @@ class BackgroundSettingsViewModel(application: Application) : AndroidViewModel(a
 
     init {
         viewModelScope.launch {
+            val backgroundModel = appSettings.backgroundModel.first()
             // Load saved background type and model
-            _backgroundType.value = appSettings.backgroundType.first()
-
-            // Load saved background model
-            appSettings.backgroundModel.first()?.let { model -> updateBackgroundModel(model) }
+            _backgroundType.value = appSettings.backgroundType.first().apply {
+                when (this) {
+                    BackgroundType.COLOR -> colorModel = (backgroundModel as BackgroundModel.ColorModel).apply { colorSelected(this) }
+                    BackgroundType.IMAGE -> imageModel = (backgroundModel as BackgroundModel.ImageModel).apply { imageSelected(this) }
+                    BackgroundType.VIDEO -> videoModel = (backgroundModel as BackgroundModel.VideoModel).apply { videoSelected(this) }
+                }
+            }
         }
     }
 
@@ -139,12 +141,11 @@ class BackgroundSettingsViewModel(application: Application) : AndroidViewModel(a
     }
 
     fun updateBackgroundModel(model: BackgroundModel) {
-        val type =
-            if (model is BackgroundModel.ColorModel) BackgroundType.COLOR else if (model is BackgroundModel.ImageModel) BackgroundType.IMAGE else BackgroundType.VIDEO
+        val type = if (model is BackgroundModel.ColorModel) BackgroundType.COLOR
+        else if (model is BackgroundModel.ImageModel) BackgroundType.IMAGE else BackgroundType.VIDEO
         viewModelScope.launch {
             appSettings.updateBackgroundType(type.ordinal)
             appSettings.updateBackgroundModel(model)
-            LogUtils.d(this.javaClass.simpleName, model.toString())
         }
     }
 } 
