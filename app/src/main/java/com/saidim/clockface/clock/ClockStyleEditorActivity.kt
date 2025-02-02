@@ -99,6 +99,9 @@ class ClockStyleEditorActivity : BaseActivity() {
     }
 
     private suspend fun setupMinimalControls(container: LinearLayout) {
+        // Get the current style from intent
+        val style = intent.getSerializableExtra(EXTRA_STYLE) as ClockStyle
+
         // Main container with vertical scroll support
         val scrollView = ScrollView(this).apply {
             layoutParams = LinearLayout.LayoutParams(
@@ -118,7 +121,7 @@ class ClockStyleEditorActivity : BaseActivity() {
 
         // Preview Section
         contentContainer.addView(createSectionTitle("Preview"))
-        contentContainer.addView(createPreviewCard())
+        contentContainer.addView(createPreviewCard(style))
 
         // Time Format Section
         contentContainer.addView(createSectionTitle("Time Format"))
@@ -171,7 +174,7 @@ class ClockStyleEditorActivity : BaseActivity() {
         container.addView(scrollView)
     }
 
-    private fun createPreviewCard(): View {
+    private fun createPreviewCard(style: ClockStyle): View {
         return LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             background = MaterialShapeDrawable(
@@ -190,8 +193,9 @@ class ClockStyleEditorActivity : BaseActivity() {
             }
             updatePadding(left = 24, top = 20, right = 24, bottom = 24)
 
+            // Preview Title
             addView(MaterialTextView(context).apply {
-                text = "Current Preview"
+                text = "Live Preview"
                 setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_TitleMedium)
                 alpha = 0.87f
                 layoutParams = LinearLayout.LayoutParams(
@@ -202,15 +206,35 @@ class ClockStyleEditorActivity : BaseActivity() {
                 }
             })
 
-            addView(MaterialTextView(context).apply {
-                text = binding.previewText.text
-                setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_HeadlineLarge)
-                gravity = Gravity.CENTER
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                )
-            })
+            // Update preview when settings change
+            lifecycleScope.launch {
+                launch {
+                    viewModel.is24Hour.collect { is24Hour ->
+                        binding.previewText.text = ClockStyleFormatter.formatTime(style)
+                    }
+                }
+                launch {
+                    viewModel.showSeconds.collect { showSeconds ->
+                        binding.previewText.text = ClockStyleFormatter.formatTime(style)
+                    }
+                }
+                launch {
+                    viewModel.minimalFontSize.collect { fontSize ->
+                        binding.previewText.setTextAppearance(
+                            when (fontSize) {
+                                ClockStyleConfig.MinimalConfig.FontSize.SMALL -> com.google.android.material.R.style.TextAppearance_Material3_HeadlineMedium
+                                ClockStyleConfig.MinimalConfig.FontSize.MEDIUM -> com.google.android.material.R.style.TextAppearance_Material3_HeadlineLarge
+                                else -> com.google.android.material.R.style.TextAppearance_Material3_DisplaySmall
+                            }
+                        )
+                    }
+                }
+                launch {
+                    viewModel.minimalTypefaceStyle.collect { typefaceStyle ->
+                        binding.previewText.typeface = Typeface.create(typefaceStyle, Typeface.NORMAL)
+                    }
+                }
+            }
         }
     }
 
