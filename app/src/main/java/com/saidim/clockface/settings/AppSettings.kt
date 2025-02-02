@@ -1,5 +1,6 @@
 package com.saidim.clockface.settings
 
+import ClockStyle
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
@@ -8,6 +9,8 @@ import com.google.gson.Gson
 import com.saidim.clockface.App
 import com.saidim.clockface.background.BackgroundType
 import com.saidim.clockface.background.model.BackgroundModel
+import com.saidim.clockface.clock.syles.ClockStyleConfig
+import com.saidim.clockface.clock.syles.ClockStyleConfigSerializer
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
@@ -38,6 +41,7 @@ class AppSettings {
         val BACKGROUND_TYPE = intPreferencesKey("background_type")
         val VIDEO_BACKGROUND = stringPreferencesKey("video_background")
         val BACKGROUND_MODEL = stringPreferencesKey("background_model")
+        val CLOCK_STYLE_CONFIG = stringPreferencesKey("clock_style_config")
     }
 
     // Generic functions for getting and setting preferences
@@ -94,4 +98,24 @@ class AppSettings {
     suspend fun updateBackgroundType(value: Int) = setPreference(Keys.BACKGROUND_TYPE, value)
     suspend fun updateBackgroundModel(backgroundModel: BackgroundModel) =
         setPreference(Keys.BACKGROUND_MODEL, backgroundModel.toJson())
+
+    // Store configuration for current style
+    suspend fun updateClockStyleConfig(style: ClockStyle, config: ClockStyleConfig) {
+        setPreference(Keys.CLOCK_STYLE_CONFIG, ClockStyleConfigSerializer.serialize(config))
+    }
+
+    // Get configuration for current style
+    fun getClockStyleConfig(style: ClockStyle): Flow<ClockStyleConfig> = flow {
+        val json = getPreference(Keys.CLOCK_STYLE_CONFIG, "").first()
+        val config = if (json.isEmpty()) {
+            style.defaultConfig
+        } else {
+            try {
+                ClockStyleConfigSerializer.deserialize(json, style)
+            } catch (e: Exception) {
+                style.defaultConfig
+            }
+        }
+        emit(config)
+    }
 }

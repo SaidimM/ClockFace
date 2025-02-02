@@ -1,5 +1,9 @@
 package com.saidim.clockface.clock
 
+import ClockStyle
+import android.content.res.ColorStateList
+import android.graphics.Color
+import android.graphics.Typeface
 import android.os.Bundle
 import android.view.View
 import android.widget.LinearLayout
@@ -9,9 +13,28 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.saidim.clockface.base.BaseActivity
 import com.saidim.clockface.databinding.ActivityClockStyleEditorBinding
+import com.saidim.clockface.clock.syles.ClockStyleConfig
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.*
+import android.widget.ArrayAdapter
+import com.google.android.material.textfield.MaterialAutoCompleteTextView
+import com.google.android.material.textfield.TextInputLayout
+import androidx.appcompat.view.ContextThemeWrapper
+import com.saidim.clockface.R
+import com.google.android.material.textview.MaterialTextView
+import com.google.android.material.button.MaterialButtonToggleGroup
+import com.google.android.material.shape.ShapeAppearanceModel
+import com.google.android.material.shape.MaterialShapeDrawable
+import com.google.android.material.elevation.SurfaceColors
+import androidx.core.content.ContextCompat
+import androidx.core.view.updatePadding
+import android.widget.ScrollView
+import android.view.Gravity
+import android.widget.HorizontalScrollView
+import android.widget.RadioGroup
+import com.google.android.material.color.MaterialColors
+import com.google.android.material.radiobutton.MaterialRadioButton
 
 class ClockStyleEditorActivity : BaseActivity() {
     private val viewModel: ClockStyleEditorViewModel by viewModels()
@@ -76,19 +99,465 @@ class ClockStyleEditorActivity : BaseActivity() {
     }
 
     private suspend fun setupMinimalControls(container: LinearLayout) {
-        container.addView(
+        // Main container with vertical scroll support
+        val scrollView = ScrollView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.MATCH_PARENT
+            )
+        }
+
+        val contentContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            setPadding(0, 0, 0, 32)
+        }
+
+        // Preview Section
+        contentContainer.addView(createSectionTitle("Preview"))
+        contentContainer.addView(createPreviewCard())
+
+        // Time Format Section
+        contentContainer.addView(createSectionTitle("Time Format"))
+        
+        // Time format settings group
+        val timeFormatContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+
+        timeFormatContainer.addView(
             createSwitchPreference(
                 "24-hour format",
-                "Use 24-hour time format",
+                "Switch between 12-hour and 24-hour time display",
                 viewModel.is24Hour.first()
-            ) { checked -> viewModel.setTimeFormat(checked) })
+            ) { checked -> viewModel.setTimeFormat(checked) }
+        )
 
-        container.addView(
+        timeFormatContainer.addView(
             createSwitchPreference(
                 "Show seconds",
-                "Display seconds in time",
+                "Display seconds alongside hours and minutes",
                 viewModel.showSeconds.first()
-            ) { checked -> viewModel.setShowSeconds(checked) })
+            ) { checked -> viewModel.setShowSeconds(checked) }
+        )
+
+        contentContainer.addView(timeFormatContainer)
+
+        // Typography Section
+        contentContainer.addView(createSectionTitle("Typography"))
+        
+        // Font size radio group
+        contentContainer.addView(createFontSizeRadioGroup(
+            viewModel.minimalFontSize.first()
+        ) { size -> viewModel.setMinimalFontSize(size) })
+
+        // Typeface selection with two columns
+        contentContainer.addView(createTypefaceSelectionCard(
+            viewModel.minimalTypefaceStyle.first(),
+            onTypefaceSelected = { style -> viewModel.setMinimalTypeface(style) }
+        ))
+
+        // Add content to scroll view
+        scrollView.addView(contentContainer)
+
+        // Add scroll view to main container
+        container.addView(scrollView)
+    }
+
+    private fun createPreviewCard(): View {
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = MaterialShapeDrawable(
+                ShapeAppearanceModel.builder()
+                    .setAllCornerSizes(28f)
+                    .build()
+            ).apply {
+                fillColor = ColorStateList.valueOf(SurfaceColors.SURFACE_2.getColor(context))
+                elevation = resources.getDimension(R.dimen.m3_card_elevation)
+            }
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(24, 8, 24, 16)
+            }
+            updatePadding(left = 24, top = 20, right = 24, bottom = 24)
+
+            addView(MaterialTextView(context).apply {
+                text = "Current Preview"
+                setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_TitleMedium)
+                alpha = 0.87f
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    setMargins(0, 0, 0, 16)
+                }
+            })
+
+            addView(MaterialTextView(context).apply {
+                text = binding.previewText.text
+                setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_HeadlineLarge)
+                gravity = Gravity.CENTER
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+            })
+        }
+    }
+
+    private fun createSectionTitle(title: String): View {
+        return MaterialTextView(this).apply {
+            text = title
+            setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_TitleLarge)
+            alpha = 0.87f
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(24, 40, 24, 16)
+            }
+        }
+    }
+
+    private fun createSwitchPreference(
+        title: String,
+        subtitle: String,
+        initialState: Boolean,
+        onChanged: (Boolean) -> Unit
+    ): View {
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = MaterialShapeDrawable(
+                ShapeAppearanceModel.builder()
+                    .setAllCornerSizes(28f)
+                    .build()
+            ).apply {
+                fillColor = ColorStateList.valueOf(SurfaceColors.SURFACE_2.getColor(context))
+                elevation = resources.getDimension(R.dimen.m3_card_elevation)
+            }
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(24, 8, 24, 8)
+            }
+            updatePadding(left = 24, top = 20, right = 24, bottom = 20)
+            
+            addView(MaterialSwitch(context).apply {
+                text = title
+                isChecked = initialState
+                setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_BodyLarge)
+                setOnCheckedChangeListener { _, checked -> onChanged(checked) }
+            })
+            
+            addView(MaterialTextView(context).apply {
+                text = subtitle
+                setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_BodyMedium)
+                alpha = 0.6f
+                updatePadding(top = 4)
+            })
+        }
+    }
+
+    private fun createFontSizeRadioGroup(
+        initialSize: ClockStyleConfig.MinimalConfig.FontSize,
+        onSizeSelected: (ClockStyleConfig.MinimalConfig.FontSize) -> Unit
+    ): View {
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = MaterialShapeDrawable(
+                ShapeAppearanceModel.builder()
+                    .setAllCornerSizes(28f)
+                    .build()
+            ).apply {
+                fillColor = ColorStateList.valueOf(SurfaceColors.SURFACE_2.getColor(context))
+                elevation = resources.getDimension(R.dimen.m3_card_elevation)
+            }
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(24, 8, 24, 16)
+            }
+            updatePadding(left = 24, top = 20, right = 24, bottom = 24)
+
+            // Label and Control in one row
+            addView(LinearLayout(context).apply {
+                orientation = LinearLayout.HORIZONTAL
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+                weightSum = 3f
+
+                // Label
+                addView(MaterialTextView(context).apply {
+                    text = "Font Size"
+                    setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_TitleMedium)
+                    alpha = 0.87f
+                    layoutParams = LinearLayout.LayoutParams(
+                        0,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        1f
+                    )
+                    gravity = Gravity.CENTER_VERTICAL
+                })
+
+                // Radio button group
+                addView(RadioGroup(context).apply {
+                    orientation = RadioGroup.HORIZONTAL
+                    layoutParams = LinearLayout.LayoutParams(
+                        0,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        2f
+                    )
+
+                    val sizes = listOf(
+                        ClockStyleConfig.MinimalConfig.FontSize.SMALL to "S",
+                        ClockStyleConfig.MinimalConfig.FontSize.MEDIUM to "M",
+                        ClockStyleConfig.MinimalConfig.FontSize.LARGE to "L"
+                    )
+
+                    sizes.forEachIndexed { index, (size, label) ->
+                        addView(MaterialRadioButton(context).apply {
+                            id = index + 1
+                            text = label
+                            isChecked = size == initialSize
+                            setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_BodyMedium)
+                            buttonTintList = ColorStateList.valueOf(
+                                MaterialColors.getColor(context, com.google.android.material.R.attr.colorPrimary, Color.BLACK)
+                            )
+                            layoutParams = RadioGroup.LayoutParams(
+                                RadioGroup.LayoutParams.WRAP_CONTENT,
+                                RadioGroup.LayoutParams.WRAP_CONTENT
+                            ).apply {
+                                marginEnd = 16
+                            }
+                        })
+                    }
+
+                    setOnCheckedChangeListener { _, checkedId ->
+                        val selectedSize = when (checkedId) {
+                            1 -> ClockStyleConfig.MinimalConfig.FontSize.SMALL
+                            2 -> ClockStyleConfig.MinimalConfig.FontSize.MEDIUM
+                            else -> ClockStyleConfig.MinimalConfig.FontSize.LARGE
+                        }
+                        onSizeSelected(selectedSize)
+                    }
+                })
+            })
+        }
+    }
+
+    private fun createTypefaceSelectionCard(
+        initialTypeface: String,
+        onTypefaceSelected: (String) -> Unit
+    ): View {
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = MaterialShapeDrawable(
+                ShapeAppearanceModel.builder()
+                    .setAllCornerSizes(28f)
+                    .build()
+            ).apply {
+                fillColor = ColorStateList.valueOf(SurfaceColors.SURFACE_2.getColor(context))
+                elevation = resources.getDimension(R.dimen.m3_card_elevation)
+            }
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(24, 8, 24, 16)
+            }
+            updatePadding(left = 24, top = 20, right = 24, bottom = 24)
+
+            // Title
+            addView(MaterialTextView(context).apply {
+                text = "Typography"
+                setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_TitleMedium)
+                alpha = 0.87f
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    setMargins(0, 0, 0, 16)
+                }
+            })
+
+            // Preview Text
+            addView(MaterialTextView(context).apply {
+                text = "Aa Bb Cc 12:34"
+                setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_HeadlineLarge)
+                gravity = Gravity.CENTER
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    setMargins(0, 0, 0, 16)
+                }
+            })
+
+            // Typography Selection Container
+            addView(LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+
+                // Font Family Selection
+                addView(MaterialTextView(context).apply {
+                    text = "Font Family"
+                    setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_LabelLarge)
+                    alpha = 0.6f
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).apply {
+                        setMargins(0, 0, 0, 8)
+                    }
+                })
+
+                // Font Family Horizontal Scroll
+                addView(HorizontalScrollView(context).apply {
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    )
+                    isHorizontalScrollBarEnabled = false
+
+                    addView(LinearLayout(context).apply {
+                        orientation = LinearLayout.HORIZONTAL
+                        
+                        val families = listOf(
+                            Pair("Sans Serif", "sans-serif"),
+                            Pair("Serif", "serif"),
+                            Pair("Monospace", "monospace")
+                        )
+
+                        families.forEach { (name, tf) ->
+                            addView(MaterialButton(
+                                ContextThemeWrapper(context, com.google.android.material.R.style.Widget_Material3_Button_OutlinedButton)
+                            ).apply {
+                                text = name
+                                typeface = Typeface.create(tf, Typeface.NORMAL)
+                                isCheckable = true
+                                isChecked = tf == initialTypeface.substringBefore('-')
+                                layoutParams = LinearLayout.LayoutParams(
+                                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                                    LinearLayout.LayoutParams.WRAP_CONTENT
+                                ).apply {
+                                    marginEnd = 8
+                                }
+                                
+                                setOnClickListener {
+                                    // Uncheck siblings
+                                    (parent as LinearLayout).apply {
+                                        for (i in 0 until childCount) {
+                                            val child = getChildAt(i)
+                                            if (child is MaterialButton && child != this@apply) {
+                                                child.isChecked = false
+                                            }
+                                        }
+                                    }
+                                    isChecked = true
+                                    onTypefaceSelected(tf)
+                                }
+                            })
+                        }
+                    })
+                })
+
+                // Font Style Selection
+                addView(MaterialTextView(context).apply {
+                    text = "Font Style"
+                    setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_LabelLarge)
+                    alpha = 0.6f
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).apply {
+                        setMargins(0, 16, 0, 8)
+                    }
+                })
+
+                // Font Style Horizontal Scroll
+                addView(HorizontalScrollView(context).apply {
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    )
+                    isHorizontalScrollBarEnabled = false
+
+                    addView(LinearLayout(context).apply {
+                        orientation = LinearLayout.HORIZONTAL
+                        
+                        val styles = listOf(
+                            Triple("Regular", "", "Aa"),
+                            Triple("Light", "-light", "Aa"),
+                            Triple("Medium", "-medium", "Aa"),
+                            Triple("Bold", "-bold", "Aa"),
+                            Triple("Black", "-black", "Aa")
+                        )
+
+                        styles.forEach { (name, suffix, preview) ->
+                            addView(MaterialButton(
+                                ContextThemeWrapper(context, com.google.android.material.R.style.Widget_Material3_Button_OutlinedButton)
+                            ).apply {
+                                text = name
+                                typeface = Typeface.create("sans-serif$suffix", Typeface.NORMAL)
+                                isCheckable = true
+                                isChecked = initialTypeface.endsWith(suffix)
+                                layoutParams = LinearLayout.LayoutParams(
+                                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                                    LinearLayout.LayoutParams.WRAP_CONTENT
+                                ).apply {
+                                    marginEnd = 8
+                                }
+                                
+                                setOnClickListener {
+                                    // Uncheck siblings
+                                    (parent as LinearLayout).apply {
+                                        for (i in 0 until childCount) {
+                                            val child = getChildAt(i)
+                                            if (child is MaterialButton && child != this@apply) {
+                                                child.isChecked = false
+                                            }
+                                        }
+                                    }
+                                    isChecked = true
+                                    val currentFamily = initialTypeface.substringBefore('-')
+                                    onTypefaceSelected("$currentFamily$suffix")
+                                }
+                            })
+                        }
+                    })
+                })
+            })
+
+            // Description text
+            addView(MaterialTextView(context).apply {
+                text = "Customize your clock's typography"
+                setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_BodyMedium)
+                alpha = 0.6f
+                gravity = Gravity.CENTER
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    topMargin = 16
+                }
+            })
+        }
     }
 
     private suspend fun setupAnalogControls(container: LinearLayout) {
@@ -129,19 +598,6 @@ class ClockStyleEditorActivity : BaseActivity() {
                 "Show time in casual language",
                 viewModel.useWordCasual.first()
             ) { checked -> viewModel.setWordCasual(checked) })
-    }
-
-    private fun createSwitchPreference(
-        title: String,
-        subtitle: String,
-        initialState: Boolean,
-        onChanged: (Boolean) -> Unit
-    ): View {
-        return MaterialSwitch(this).apply {
-            text = title
-            isChecked = initialState
-            setOnCheckedChangeListener { _, checked -> onChanged(checked) }
-        }
     }
 
     private fun createColorPicker(

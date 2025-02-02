@@ -2,9 +2,11 @@ package com.saidim.clockface.clock
 
 import android.app.Application
 import android.graphics.Color
+import android.graphics.Typeface
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.saidim.clockface.settings.AppSettings
+import com.saidim.clockface.clock.syles.ClockStyleConfig
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -33,6 +35,15 @@ class ClockStyleEditorViewModel(application: Application) : AndroidViewModel(app
 
     private val _useWordCasual = MutableStateFlow(true)
     val useWordCasual: StateFlow<Boolean> = _useWordCasual
+
+    private val _minimalFontColor = MutableStateFlow(Color.WHITE)
+    val minimalFontColor: StateFlow<Int> = _minimalFontColor
+
+    private val _minimalFontSize = MutableStateFlow(ClockStyleConfig.MinimalConfig.FontSize.MEDIUM)
+    val minimalFontSize: StateFlow<ClockStyleConfig.MinimalConfig.FontSize> = _minimalFontSize
+
+    private val _minimalTypefaceStyle = MutableStateFlow("sans-serif")
+    val minimalTypefaceStyle: StateFlow<String> = _minimalTypefaceStyle
 
     init {
         viewModelScope.launch {
@@ -89,5 +100,37 @@ class ClockStyleEditorViewModel(application: Application) : AndroidViewModel(app
             _useWordCasual.value = casual
             // Save to settings
         }
+    }
+
+    fun setMinimalFontColor(color: Int) {
+        viewModelScope.launch {
+            _minimalFontColor.value = color
+            updateMinimalConfig()
+        }
+    }
+
+    fun setMinimalFontSize(size: ClockStyleConfig.MinimalConfig.FontSize) {
+        viewModelScope.launch {
+            _minimalFontSize.value = size
+            updateMinimalConfig()
+        }
+    }
+
+    fun setMinimalTypeface(typefaceStyle: String) {
+        viewModelScope.launch {
+            _minimalTypefaceStyle.value = typefaceStyle
+            updateMinimalConfig()
+        }
+    }
+
+    private suspend fun updateMinimalConfig() {
+        val config = ClockStyleConfig.MinimalConfig(
+            is24Hour = _is24Hour.value,
+            showSeconds = _showSeconds.value,
+            fontColor = _minimalFontColor.value,
+            fontSize = _minimalFontSize.value,
+            typefaceStyle = _minimalTypefaceStyle.value
+        )
+        appSettings.updateClockStyleConfig(ClockStyle.MINIMAL, config)
     }
 } 

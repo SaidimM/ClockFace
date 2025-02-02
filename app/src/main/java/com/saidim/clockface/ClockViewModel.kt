@@ -1,12 +1,12 @@
 package com.saidim.clockface
 
+import ClockStyle
 import android.app.Application
 import android.graphics.drawable.GradientDrawable
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
-import com.saidim.clockface.clock.ClockStyle
 import com.saidim.clockface.clock.ClockStyleFormatter
 import com.saidim.clockface.settings.AppSettings
 import kotlinx.coroutines.delay

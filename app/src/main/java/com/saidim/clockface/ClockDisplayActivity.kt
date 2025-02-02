@@ -14,7 +14,10 @@ import coil.ImageLoader
 import coil.load
 import com.saidim.clockface.background.BackgroundType
 import com.saidim.clockface.background.model.BackgroundModel
+import com.saidim.clockface.clock.syles.ClockStyleConfig
+import com.saidim.clockface.settings.AppSettings
 import kotlinx.coroutines.launch
+import android.graphics.Typeface
 
 class ClockDisplayActivity : AppCompatActivity() {
     private val viewModel: ClockViewModel by viewModels()
@@ -22,6 +25,7 @@ class ClockDisplayActivity : AppCompatActivity() {
     private lateinit var timeTextAnimator: TimeTextAnimator
     private lateinit var rootView: View
     private lateinit var imageLoader: ImageLoader
+    private val appSettings = AppSettings.instance
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,10 +51,23 @@ class ClockDisplayActivity : AppCompatActivity() {
     }
 
     private fun setupObservers() {
-        viewModel.currentTime.observe(this) { time ->
-            if (time != currentTimeText) {
-                currentTimeText = time
-                timeTextAnimator.animateTextChange(time)
+        lifecycleScope.launch {
+            viewModel.currentTime.observe(this@ClockDisplayActivity) { time ->
+                if (time != currentTimeText) {
+                    currentTimeText = time
+                    timeTextAnimator.animateTextChange(time)
+                }
+            }
+
+            // Observe clock style config
+            appSettings.getClockStyleConfig(ClockStyle.MINIMAL).collect { config ->
+                if (config is ClockStyleConfig.MinimalConfig) {
+                    findViewById<TextView>(R.id.clockText).apply {
+                        setTextColor(config.fontColor)
+                        textSize = 32f * config.fontSize.scale
+                        typeface = Typeface.create(config.typefaceStyle, Typeface.NORMAL)
+                    }
+                }
             }
         }
     }
