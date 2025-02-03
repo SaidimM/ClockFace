@@ -13,8 +13,34 @@
             android:id="@+id/topAppBar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
+            app:layout_scrollFlags="scroll|enterAlways|snap"
             app:navigationIcon="@drawable/ic_arrow_back"
             style="@style/Widget.Material3.Toolbar"/>
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/previewContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="16dp"
+            app:layout_scrollFlags="noScroll"
+            style="@style/Widget.Material3.CardView.Elevated">
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:background="?attr/colorSurfaceVariant">
+
+                <TextView
+                    android:id="@+id/previewText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:textSize="32sp"
+                    android:transitionName="@string/clock_preview_transition"
+                    android:textColor="?attr/colorOnSurfaceVariant"/>
+            </FrameLayout>
+
+        </com.google.android.material.card.MaterialCardView>
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -28,29 +54,6 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="16dp">
-
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                style="@style/Widget.Material3.CardView.Elevated">
-
-                <FrameLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="200dp"
-                    android:background="?attr/colorSurfaceVariant">
-
-                    <TextView
-                        android:id="@+id/previewText"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        android:textSize="32sp"
-                        android:transitionName="@string/clock_preview_transition"
-                        android:textColor="?attr/colorOnSurfaceVariant"/>
-                </FrameLayout>
-
-            </com.google.android.material.card.MaterialCardView>
 
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/controlsCard"

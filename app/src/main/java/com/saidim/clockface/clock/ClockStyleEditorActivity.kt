@@ -417,19 +417,6 @@ class ClockStyleEditorActivity : BaseActivity() {
                 }
             })
 
-            // Preview Text
-            addView(MaterialTextView(context).apply {
-                text = "Aa Bb Cc 12:34"
-                setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_HeadlineLarge)
-                gravity = Gravity.CENTER
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply {
-                    setMargins(0, 0, 0, 16)
-                }
-            })
-
             // Typography Selection Container
             addView(LinearLayout(context).apply {
                 orientation = LinearLayout.VERTICAL
