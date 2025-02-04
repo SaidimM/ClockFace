@@ -1,9 +1,12 @@
 package com.saidim.clockface.clock
 
 import ClockStyle
+import android.R.attr.maxHeight
+import android.annotation.SuppressLint
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.Typeface
+import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.widget.LinearLayout
@@ -35,11 +38,20 @@ import android.widget.HorizontalScrollView
 import android.widget.RadioGroup
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.radiobutton.MaterialRadioButton
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import android.text.Editable
+import android.text.TextWatcher
+import android.view.ViewGroup
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.card.MaterialCardView
 
 class ClockStyleEditorActivity : BaseActivity() {
     private val viewModel: ClockStyleEditorViewModel by viewModels()
     private lateinit var binding: ActivityClockStyleEditorBinding
     private lateinit var updateTimer: Timer
+    private lateinit var fontFamilyDrawer: BottomSheetDialog
 
     companion object {
         const val EXTRA_STYLE = "extra_style"
@@ -161,11 +173,17 @@ class ClockStyleEditorActivity : BaseActivity() {
             viewModel.minimalFontSize.first()
         ) { size -> viewModel.setMinimalFontSize(size) })
 
-        // Typeface selection with two columns
-        contentContainer.addView(createTypefaceSelectionCard(
-            viewModel.minimalTypefaceStyle.first(),
-            onTypefaceSelected = { style -> viewModel.setMinimalTypeface(style) }
-        ))
+        // Get current typeface
+        val currentTypeface = viewModel.minimalTypefaceStyle.first()
+
+        // Typeface Card
+        contentContainer.addView(createTypefaceCard(
+            currentTypeface
+        ) { typeface -> 
+            lifecycleScope.launch {
+                viewModel.setMinimalTypeface(typeface)
+            }
+        })
 
         // Add content to scroll view
         scrollView.addView(contentContainer)
@@ -382,50 +400,44 @@ class ClockStyleEditorActivity : BaseActivity() {
         }
     }
 
-    private fun createTypefaceSelectionCard(
-        initialTypeface: String,
+    private fun createTypefaceCard(
+        currentTypeface: String,
         onTypefaceSelected: (String) -> Unit
     ): View {
-        return LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            background = MaterialShapeDrawable(
-                ShapeAppearanceModel.builder()
-                    .setAllCornerSizes(28f)
-                    .build()
-            ).apply {
-                fillColor = ColorStateList.valueOf(SurfaceColors.SURFACE_2.getColor(context))
-                elevation = resources.getDimension(R.dimen.m3_card_elevation)
-            }
+        return MaterialCardView(this).apply {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
             ).apply {
                 setMargins(24, 8, 24, 16)
             }
-            updatePadding(left = 24, top = 20, right = 24, bottom = 24)
+            elevation = resources.getDimension(R.dimen.m3_card_elevation)
+            setCardBackgroundColor(SurfaceColors.SURFACE_2.getColor(context))
+            radius = resources.getDimension(R.dimen.m3_card_corner_radius)
 
-            // Title
-            addView(MaterialTextView(context).apply {
-                text = "Typography"
-                setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_TitleMedium)
-                alpha = 0.87f
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply {
-                    setMargins(0, 0, 0, 16)
-                }
-            })
-
-            // Typography Selection Container
+            // Content container
             addView(LinearLayout(context).apply {
                 orientation = LinearLayout.VERTICAL
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
                 )
+                updatePadding(left = 24, top = 20, right = 24, bottom = 24)
 
-                // Font Family Selection
+                // Title
+                addView(MaterialTextView(context).apply {
+                    text = "Typeface"
+                    setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_TitleMedium)
+                    alpha = 0.87f
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).apply {
+                        setMargins(0, 0, 0, 16)
+                    }
+                })
+
+                // Font Family Section
                 addView(MaterialTextView(context).apply {
                     text = "Font Family"
                     setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_LabelLarge)
@@ -438,57 +450,59 @@ class ClockStyleEditorActivity : BaseActivity() {
                     }
                 })
 
-                // Font Family Horizontal Scroll
+                // Font Family Scroll Container
                 addView(HorizontalScrollView(context).apply {
                     layoutParams = LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,
                         LinearLayout.LayoutParams.WRAP_CONTENT
-                    )
+                    ).apply {
+                        bottomMargin = 24
+                    }
                     isHorizontalScrollBarEnabled = false
 
-                    addView(LinearLayout(context).apply {
-                        orientation = LinearLayout.HORIZONTAL
-                        
-                        val families = listOf(
-                            Pair("Sans Serif", "sans-serif"),
-                            Pair("Serif", "serif"),
-                            Pair("Monospace", "monospace")
+                    // Font Family Chip Group
+                    val familyChipGroup = com.google.android.material.chip.ChipGroup(context).apply {
+                        layoutParams = LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.WRAP_CONTENT,
+                            LinearLayout.LayoutParams.WRAP_CONTENT
                         )
+                        isSingleSelection = true
+                        isSelectionRequired = true
+                    }
 
-                        families.forEach { (name, tf) ->
-                            addView(MaterialButton(
-                                ContextThemeWrapper(context, com.google.android.material.R.style.Widget_Material3_Button_OutlinedButton)
-                            ).apply {
-                                text = name
-                                typeface = Typeface.create(tf, Typeface.NORMAL)
-                                isCheckable = true
-                                isChecked = tf == initialTypeface.substringBefore('-')
-                                layoutParams = LinearLayout.LayoutParams(
-                                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                                    LinearLayout.LayoutParams.WRAP_CONTENT
-                                ).apply {
-                                    marginEnd = 8
+                    // Get system fonts
+                    val systemFonts = listOf(
+                        "sans-serif",
+                        "serif",
+                        "monospace",
+                        "casual",
+                        "cursive"
+                    )
+
+                    // Add font family chips
+                    systemFonts.forEach { family ->
+                        familyChipGroup.addView(com.google.android.material.chip.Chip(
+                            ContextThemeWrapper(context, com.google.android.material.R.style.Widget_Material3_Chip_Filter)
+                        ).apply {
+                            text = family.split('-')
+                                .joinToString(" ") { 
+                                    it.capitalize(Locale.getDefault()) 
                                 }
-                                
-                                setOnClickListener {
-                                    // Uncheck siblings
-                                    (parent as LinearLayout).apply {
-                                        for (i in 0 until childCount) {
-                                            val child = getChildAt(i)
-                                            if (child is MaterialButton && child != this@apply) {
-                                                child.isChecked = false
-                                            }
-                                        }
-                                    }
-                                    isChecked = true
-                                    onTypefaceSelected(tf)
+                            typeface = Typeface.create(family, Typeface.NORMAL)
+                            isCheckable = true
+                            isChecked = currentTypeface.startsWith(family)
+                            setOnCheckedChangeListener { _, isChecked ->
+                                if (isChecked) {
+                                    val newTypeface = "$family${currentTypeface.substringAfter(family.substringBefore('-'), "")}"
+                                    onTypefaceSelected(newTypeface)
                                 }
-                            })
-                        }
-                    })
+                            }
+                        })
+                    }
+                    addView(familyChipGroup)
                 })
 
-                // Font Style Selection
+                // Font Style Section
                 addView(MaterialTextView(context).apply {
                     text = "Font Style"
                     setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_LabelLarge)
@@ -497,76 +511,56 @@ class ClockStyleEditorActivity : BaseActivity() {
                         LinearLayout.LayoutParams.WRAP_CONTENT,
                         LinearLayout.LayoutParams.WRAP_CONTENT
                     ).apply {
-                        setMargins(0, 16, 0, 8)
+                        setMargins(0, 0, 0, 8)
                     }
                 })
 
-                // Font Style Horizontal Scroll
-                addView(HorizontalScrollView(context).apply {
+                // Style Chip Group
+                val styleChipGroup = com.google.android.material.chip.ChipGroup(context).apply {
                     layoutParams = LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,
                         LinearLayout.LayoutParams.WRAP_CONTENT
                     )
-                    isHorizontalScrollBarEnabled = false
+                    isSingleSelection = true
+                    isSelectionRequired = true
+                }
 
-                    addView(LinearLayout(context).apply {
-                        orientation = LinearLayout.HORIZONTAL
-                        
-                        val styles = listOf(
-                            Triple("Regular", "", "Aa"),
-                            Triple("Light", "-light", "Aa"),
-                            Triple("Medium", "-medium", "Aa"),
-                            Triple("Bold", "-bold", "Aa"),
-                            Triple("Black", "-black", "Aa")
-                        )
+                // Get current family and style
+                val currentFamily = currentTypeface.substringBefore('-')
+                val currentStyle = currentTypeface.substringAfter(currentFamily, "")
 
-                        styles.forEach { (name, suffix, preview) ->
-                            addView(MaterialButton(
-                                ContextThemeWrapper(context, com.google.android.material.R.style.Widget_Material3_Button_OutlinedButton)
-                            ).apply {
-                                text = name
-                                typeface = Typeface.create("sans-serif$suffix", Typeface.NORMAL)
-                                isCheckable = true
-                                isChecked = initialTypeface.endsWith(suffix)
-                                layoutParams = LinearLayout.LayoutParams(
-                                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                                    LinearLayout.LayoutParams.WRAP_CONTENT
-                                ).apply {
-                                    marginEnd = 8
-                                }
-                                
-                                setOnClickListener {
-                                    // Uncheck siblings
-                                    (parent as LinearLayout).apply {
-                                        for (i in 0 until childCount) {
-                                            val child = getChildAt(i)
-                                            if (child is MaterialButton && child != this@apply) {
-                                                child.isChecked = false
-                                            }
-                                        }
-                                    }
-                                    isChecked = true
-                                    val currentFamily = initialTypeface.substringBefore('-')
-                                    onTypefaceSelected("$currentFamily$suffix")
-                                }
-                            })
+                // Add style options
+                listOf(
+                    Triple("Regular", "", "Aa"),
+                    Triple("Light", "-light", "Aa"),
+                    Triple("Medium", "-medium", "Aa"),
+                    Triple("Bold", "-bold", "Aa"),
+                    Triple("Black", "-black", "Aa")
+                ).filter { (_, suffix, _) ->
+                    try {
+                        val testTypeface = Typeface.create("$currentFamily$suffix", Typeface.NORMAL)
+                        testTypeface != Typeface.DEFAULT || currentFamily == "sans-serif"
+                    } catch (e: Exception) {
+                        false
+                    }
+                }.forEach { (name, suffix, preview) ->
+                    styleChipGroup.addView(com.google.android.material.chip.Chip(
+                        ContextThemeWrapper(context, com.google.android.material.R.style.Widget_Material3_Chip_Filter)
+                    ).apply {
+                        text = preview
+                        contentDescription = name
+                        typeface = Typeface.create("$currentFamily$suffix", Typeface.NORMAL)
+                        isCheckable = true
+                        isChecked = suffix == currentStyle
+                        setOnCheckedChangeListener { _, isChecked ->
+                            if (isChecked) {
+                                onTypefaceSelected("$currentFamily$suffix")
+                            }
                         }
                     })
-                })
-            })
-
-            // Description text
-            addView(MaterialTextView(context).apply {
-                text = "Customize your clock's typography"
-                setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_BodyMedium)
-                alpha = 0.6f
-                gravity = Gravity.CENTER
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply {
-                    topMargin = 16
                 }
+
+                addView(styleChipGroup)
             })
         }
     }

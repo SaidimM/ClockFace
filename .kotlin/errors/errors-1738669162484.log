@@ -1,0 +1,403 @@
+kotlin version: 2.0.20
+error message: org.jetbrains.kotlin.backend.common.BackendException: Backend Internal error: Exception during IR lowering
+File being compiled: /Users/saidim/IntelliJIDEAProjects/ClockFace/app/src/main/java/com/saidim/clockface/clock/ClockStyleEditorActivity.kt
+The root cause java.lang.RuntimeException was thrown at: org.jetbrains.kotlin.backend.jvm.codegen.FunctionCodegen.generate(FunctionCodegen.kt:47)
+	at org.jetbrains.kotlin.backend.common.CodegenUtil.reportBackendException(CodegenUtil.kt:253)
+	at org.jetbrains.kotlin.backend.common.CodegenUtil.reportBackendException$default(CodegenUtil.kt:236)
+	at org.jetbrains.kotlin.backend.common.phaser.PerformByIrFilePhase.invokeSequential(performByIrFile.kt:65)
+	at org.jetbrains.kotlin.backend.common.phaser.PerformByIrFilePhase.invoke(performByIrFile.kt:52)
+	at org.jetbrains.kotlin.backend.common.phaser.PerformByIrFilePhase.invoke(performByIrFile.kt:38)
+	at org.jetbrains.kotlin.backend.common.phaser.NamedCompilerPhase.phaseBody(CompilerPhase.kt:166)
+	at org.jetbrains.kotlin.backend.common.phaser.AbstractNamedCompilerPhase.invoke(CompilerPhase.kt:113)
+	at org.jetbrains.kotlin.backend.common.phaser.CompositePhase.invoke(PhaseBuilders.kt:27)
+	at org.jetbrains.kotlin.backend.common.phaser.CompositePhase.invoke(PhaseBuilders.kt:14)
+	at org.jetbrains.kotlin.backend.common.phaser.NamedCompilerPhase.phaseBody(CompilerPhase.kt:166)
+	at org.jetbrains.kotlin.backend.common.phaser.AbstractNamedCompilerPhase.invoke(CompilerPhase.kt:113)
+	at org.jetbrains.kotlin.backend.common.phaser.CompilerPhaseKt.invokeToplevel(CompilerPhase.kt:62)
+	at org.jetbrains.kotlin.backend.jvm.JvmIrCodegenFactory.invokeCodegen(JvmIrCodegenFactory.kt:371)
+	at org.jetbrains.kotlin.codegen.CodegenFactory.generateModule(CodegenFactory.kt:47)
+	at org.jetbrains.kotlin.backend.jvm.JvmIrCodegenFactory.generateModuleInFrontendIRMode(JvmIrCodegenFactory.kt:433)
+	at org.jetbrains.kotlin.cli.jvm.compiler.pipeline.JvmCompilerPipelineKt.generateCodeFromIr(jvmCompilerPipeline.kt:246)
+	at org.jetbrains.kotlin.cli.jvm.compiler.pipeline.JvmCompilerPipelineKt.compileModulesUsingFrontendIrAndLightTree(jvmCompilerPipeline.kt:142)
+	at org.jetbrains.kotlin.cli.jvm.K2JVMCompiler.doExecute(K2JVMCompiler.kt:148)
+	at org.jetbrains.kotlin.cli.jvm.K2JVMCompiler.doExecute(K2JVMCompiler.kt:43)
+	at org.jetbrains.kotlin.cli.common.CLICompiler.execImpl(CLICompiler.kt:103)
+	at org.jetbrains.kotlin.cli.common.CLICompiler.execImpl(CLICompiler.kt:49)
+	at org.jetbrains.kotlin.cli.common.CLITool.exec(CLITool.kt:101)
+	at org.jetbrains.kotlin.incremental.IncrementalJvmCompilerRunner.runCompiler(IncrementalJvmCompilerRunner.kt:464)
+	at org.jetbrains.kotlin.incremental.IncrementalJvmCompilerRunner.runCompiler(IncrementalJvmCompilerRunner.kt:73)
+	at org.jetbrains.kotlin.incremental.IncrementalCompilerRunner.doCompile(IncrementalCompilerRunner.kt:506)
+	at org.jetbrains.kotlin.incremental.IncrementalCompilerRunner.compileImpl(IncrementalCompilerRunner.kt:423)
+	at org.jetbrains.kotlin.incremental.IncrementalCompilerRunner.tryCompileIncrementally$lambda$9$compile(IncrementalCompilerRunner.kt:249)
+	at org.jetbrains.kotlin.incremental.IncrementalCompilerRunner.tryCompileIncrementally(IncrementalCompilerRunner.kt:267)
+	at org.jetbrains.kotlin.incremental.IncrementalCompilerRunner.compile(IncrementalCompilerRunner.kt:120)
+	at org.jetbrains.kotlin.daemon.CompileServiceImplBase.execIncrementalCompiler(CompileServiceImpl.kt:675)
+	at org.jetbrains.kotlin.daemon.CompileServiceImplBase.access$execIncrementalCompiler(CompileServiceImpl.kt:92)
+	at org.jetbrains.kotlin.daemon.CompileServiceImpl.compile(CompileServiceImpl.kt:1660)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.rmi/sun.rmi.server.UnicastServerRef.dispatch(UnicastServerRef.java:360)
+	at java.rmi/sun.rmi.transport.Transport$1.run(Transport.java:200)
+	at java.rmi/sun.rmi.transport.Transport$1.run(Transport.java:197)
+	at java.base/java.security.AccessController.doPrivileged(AccessController.java:712)
+	at java.rmi/sun.rmi.transport.Transport.serviceCall(Transport.java:196)
+	at java.rmi/sun.rmi.transport.tcp.TCPTransport.handleMessages(TCPTransport.java:587)
+	at java.rmi/sun.rmi.transport.tcp.TCPTransport$ConnectionHandler.run0(TCPTransport.java:828)
+	at java.rmi/sun.rmi.transport.tcp.TCPTransport$ConnectionHandler.lambda$run$0(TCPTransport.java:705)
+	at java.base/java.security.AccessController.doPrivileged(AccessController.java:399)
+	at java.rmi/sun.rmi.transport.tcp.TCPTransport$ConnectionHandler.run(TCPTransport.java:704)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)
+	at java.base/java.lang.Thread.run(Thread.java:842)
+Caused by: java.lang.RuntimeException: Exception while generating code for:
+FUN name:createTypefaceSelectionCard visibility:private modality:FINAL <> ($this:com.saidim.clockface.clock.ClockStyleEditorActivity, initialTypeface:kotlin.String, onTypefaceSelected:kotlin.Function1<kotlin.String, kotlin.Unit>) returnType:android.view.View
+  $this: VALUE_PARAMETER name:<this> type:com.saidim.clockface.clock.ClockStyleEditorActivity
+  VALUE_PARAMETER name:initialTypeface index:0 type:kotlin.String
+  VALUE_PARAMETER name:onTypefaceSelected index:1 type:kotlin.Function1<kotlin.String, kotlin.Unit>
+  BLOCK_BODY
+    RETURN type=kotlin.Nothing from='private final fun createTypefaceSelectionCard (initialTypeface: kotlin.String, onTypefaceSelected: kotlin.Function1<kotlin.String, kotlin.Unit>): android.view.View declared in com.saidim.clockface.clock.ClockStyleEditorActivity'
+      CALL 'public final fun apply <T> (block: @[ExtensionFunctionType] kotlin.Function1<T of kotlin.StandardKt.apply, kotlin.Unit>): T of kotlin.StandardKt.apply [inline] declared in kotlin.StandardKt' type=android.widget.LinearLayout origin=null
+        <T>: android.widget.LinearLayout
+        $receiver: CONSTRUCTOR_CALL 'public constructor <init> (p0: @[FlexibleNullability] android.content.Context?) declared in android.widget.LinearLayout' type=android.widget.LinearLayout origin=null
+          p0: GET_VAR '<this>: com.saidim.clockface.clock.ClockStyleEditorActivity declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard' type=com.saidim.clockface.clock.ClockStyleEditorActivity origin=null
+        block: BLOCK type=@[ExtensionFunctionType] kotlin.Function1<android.widget.LinearLayout, kotlin.Unit> origin=LAMBDA
+          COMPOSITE type=kotlin.Unit origin=null
+          FUNCTION_REFERENCE 'private final fun createTypefaceSelectionCard$lambda$51 (this$0: com.saidim.clockface.clock.ClockStyleEditorActivity, $initialTypeface: kotlin.String, $onTypefaceSelected: kotlin.Function1<kotlin.String, kotlin.Unit>): kotlin.Unit declared in com.saidim.clockface.clock.ClockStyleEditorActivity' type=@[ExtensionFunctionType] kotlin.Function1<android.widget.LinearLayout, kotlin.Unit> origin=INLINE_LAMBDA reflectionTarget=null
+            this$0: GET_VAR '<this>: com.saidim.clockface.clock.ClockStyleEditorActivity declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard' type=com.saidim.clockface.clock.ClockStyleEditorActivity origin=null
+            $initialTypeface: GET_VAR 'initialTypeface: kotlin.String declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard' type=kotlin.String origin=null
+            $onTypefaceSelected: GET_VAR 'onTypefaceSelected: kotlin.Function1<kotlin.String, kotlin.Unit> declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard' type=kotlin.Function1<kotlin.String, kotlin.Unit> origin=null
+
+	at org.jetbrains.kotlin.backend.jvm.codegen.FunctionCodegen.generate(FunctionCodegen.kt:47)
+	at org.jetbrains.kotlin.backend.jvm.codegen.FunctionCodegen.generate$default(FunctionCodegen.kt:40)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ClassCodegen.generateMethodNode(ClassCodegen.kt:406)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ClassCodegen.generateMethod(ClassCodegen.kt:423)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ClassCodegen.generate(ClassCodegen.kt:168)
+	at org.jetbrains.kotlin.backend.jvm.FileCodegen.lower(JvmPhases.kt:39)
+	at org.jetbrains.kotlin.backend.common.phaser.PhaseFactoriesKt.createFilePhase$lambda$4(PhaseFactories.kt:71)
+	at org.jetbrains.kotlin.backend.common.phaser.PhaseBuildersKt$createSimpleNamedCompilerPhase$1.phaseBody(PhaseBuilders.kt:69)
+	at org.jetbrains.kotlin.backend.common.phaser.SimpleNamedCompilerPhase.phaseBody(CompilerPhase.kt:226)
+	at org.jetbrains.kotlin.backend.common.phaser.AbstractNamedCompilerPhase.invoke(CompilerPhase.kt:113)
+	at org.jetbrains.kotlin.backend.common.phaser.PerformByIrFilePhase.invokeSequential(performByIrFile.kt:62)
+	... 46 more
+Caused by: java.lang.RuntimeException: Exception while generating code for:
+FUN INLINE_LAMBDA name:createTypefaceSelectionCard$lambda$51 visibility:private modality:FINAL <> ($receiver:android.widget.LinearLayout, this$0:com.saidim.clockface.clock.ClockStyleEditorActivity, $initialTypeface:kotlin.String, $onTypefaceSelected:kotlin.Function1<kotlin.String, kotlin.Unit>) returnType:kotlin.Unit
+  $receiver: VALUE_PARAMETER name:$this$apply type:android.widget.LinearLayout
+  VALUE_PARAMETER BOUND_VALUE_PARAMETER name:this$0 index:0 type:com.saidim.clockface.clock.ClockStyleEditorActivity
+  VALUE_PARAMETER BOUND_VALUE_PARAMETER name:$initialTypeface index:1 type:kotlin.String
+  VALUE_PARAMETER BOUND_VALUE_PARAMETER name:$onTypefaceSelected index:2 type:kotlin.Function1<kotlin.String, kotlin.Unit>
+  BLOCK_BODY
+    VAR name:$i$a$-apply-ClockStyleEditorActivity$createTypefaceSelectionCard$1 type:kotlin.Int [val]
+      CONST Int type=kotlin.Int value=0
+    CALL 'public open fun setOrientation (p0: kotlin.Int): kotlin.Unit declared in android.widget.LinearLayout' type=kotlin.Unit origin=EQ
+      $this: GET_VAR '$this$apply: android.widget.LinearLayout declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=android.widget.LinearLayout origin=null
+      p0: CONST Int type=kotlin.Int value=1
+    CALL 'public open fun setBackground (p0: @[FlexibleNullability] android.graphics.drawable.Drawable?): kotlin.Unit [fake_override] declared in android.widget.LinearLayout' type=kotlin.Unit origin=EQ
+      $this: GET_VAR '$this$apply: android.widget.LinearLayout declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=android.widget.LinearLayout origin=null
+      p0: CALL 'public final fun apply <T> (block: @[ExtensionFunctionType] kotlin.Function1<T of kotlin.StandardKt.apply, kotlin.Unit>): T of kotlin.StandardKt.apply [inline] declared in kotlin.StandardKt' type=com.google.android.material.shape.MaterialShapeDrawable origin=null
+        <T>: com.google.android.material.shape.MaterialShapeDrawable
+        $receiver: CONSTRUCTOR_CALL 'public constructor <init> (p0: @[EnhancedNullability] com.google.android.material.shape.ShapeAppearanceModel) declared in com.google.android.material.shape.MaterialShapeDrawable' type=com.google.android.material.shape.MaterialShapeDrawable origin=null
+          p0: CALL 'public open fun build (): @[EnhancedNullability] com.google.android.material.shape.ShapeAppearanceModel declared in com.google.android.material.shape.ShapeAppearanceModel.Builder' type=@[EnhancedNullability] com.google.android.material.shape.ShapeAppearanceModel origin=null
+            $this: CALL 'public open fun setAllCornerSizes (p0: kotlin.Float): @[EnhancedNullability] com.google.android.material.shape.ShapeAppearanceModel.Builder declared in com.google.android.material.shape.ShapeAppearanceModel.Builder' type=@[EnhancedNullability] com.google.android.material.shape.ShapeAppearanceModel.Builder origin=null
+              $this: CALL 'public open fun builder (): @[EnhancedNullability] com.google.android.material.shape.ShapeAppearanceModel.Builder declared in com.google.android.material.shape.ShapeAppearanceModel' type=@[EnhancedNullability] com.google.android.material.shape.ShapeAppearanceModel.Builder origin=null
+              p0: CONST Float type=kotlin.Float value=28.0
+        block: BLOCK type=@[ExtensionFunctionType] kotlin.Function1<com.google.android.material.shape.MaterialShapeDrawable, kotlin.Unit> origin=LAMBDA
+          COMPOSITE type=kotlin.Unit origin=null
+          FUNCTION_REFERENCE 'private final fun createTypefaceSelectionCard$lambda$51$lambda$33 ($this_apply: android.widget.LinearLayout): kotlin.Unit declared in com.saidim.clockface.clock.ClockStyleEditorActivity' type=@[ExtensionFunctionType] kotlin.Function1<com.google.android.material.shape.MaterialShapeDrawable, kotlin.Unit> origin=INLINE_LAMBDA reflectionTarget=null
+            $this_apply: GET_VAR '$this$apply: android.widget.LinearLayout declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=android.widget.LinearLayout origin=null
+    CALL 'public open fun setLayoutParams (p0: @[FlexibleNullability] android.view.ViewGroup.LayoutParams?): kotlin.Unit [fake_override] declared in android.widget.LinearLayout' type=kotlin.Unit origin=EQ
+      $this: GET_VAR '$this$apply: android.widget.LinearLayout declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=android.widget.LinearLayout origin=null
+      p0: CALL 'public final fun apply <T> (block: @[ExtensionFunctionType] kotlin.Function1<T of kotlin.StandardKt.apply, kotlin.Unit>): T of kotlin.StandardKt.apply [inline] declared in kotlin.StandardKt' type=android.widget.LinearLayout.LayoutParams origin=null
+        <T>: android.widget.LinearLayout.LayoutParams
+        $receiver: CONSTRUCTOR_CALL 'public constructor <init> (p0: kotlin.Int, p1: kotlin.Int) declared in android.widget.LinearLayout.LayoutParams' type=android.widget.LinearLayout.LayoutParams origin=null
+          p0: CONST Int type=kotlin.Int value=-1
+          p1: CONST Int type=kotlin.Int value=-2
+        block: BLOCK type=@[ExtensionFunctionType] kotlin.Function1<android.widget.LinearLayout.LayoutParams, kotlin.Unit> origin=LAMBDA
+          COMPOSITE type=kotlin.Unit origin=null
+          FUNCTION_REFERENCE 'private final fun createTypefaceSelectionCard$lambda$51$lambda$34 (): kotlin.Unit declared in com.saidim.clockface.clock.ClockStyleEditorActivity' type=@[ExtensionFunctionType] kotlin.Function1<android.widget.LinearLayout.LayoutParams, kotlin.Unit> origin=INLINE_LAMBDA reflectionTarget=null
+    CALL 'public final fun updatePadding (left: kotlin.Int, top: kotlin.Int, right: kotlin.Int, bottom: kotlin.Int): kotlin.Unit [inline] declared in androidx.core.view.ViewKt' type=kotlin.Unit origin=null
+      $receiver: GET_VAR '$this$apply: android.widget.LinearLayout declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=android.widget.LinearLayout origin=null
+      left: CONST Int type=kotlin.Int value=24
+      top: CONST Int type=kotlin.Int value=20
+      right: CONST Int type=kotlin.Int value=24
+      bottom: CONST Int type=kotlin.Int value=24
+    CALL 'public open fun addView (p0: @[FlexibleNullability] android.view.View?): kotlin.Unit [fake_override] declared in android.widget.LinearLayout' type=kotlin.Unit origin=null
+      $this: GET_VAR '$this$apply: android.widget.LinearLayout declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=android.widget.LinearLayout origin=null
+      p0: CALL 'public final fun apply <T> (block: @[ExtensionFunctionType] kotlin.Function1<T of kotlin.StandardKt.apply, kotlin.Unit>): T of kotlin.StandardKt.apply [inline] declared in kotlin.StandardKt' type=com.google.android.material.textview.MaterialTextView origin=null
+        <T>: com.google.android.material.textview.MaterialTextView
+        $receiver: CONSTRUCTOR_CALL 'public constructor <init> (p0: @[EnhancedNullability] android.content.Context) declared in com.google.android.material.textview.MaterialTextView' type=com.google.android.material.textview.MaterialTextView origin=null
+          p0: CALL 'public final fun getContext (): @[FlexibleNullability] android.content.Context? [fake_override] declared in android.widget.LinearLayout' type=@[FlexibleNullability] android.content.Context? origin=GET_PROPERTY
+            $this: GET_VAR '$this$apply: android.widget.LinearLayout declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=android.widget.LinearLayout origin=null
+        block: BLOCK type=@[ExtensionFunctionType] kotlin.Function1<com.google.android.material.textview.MaterialTextView, kotlin.Unit> origin=LAMBDA
+          COMPOSITE type=kotlin.Unit origin=null
+          FUNCTION_REFERENCE 'private final fun createTypefaceSelectionCard$lambda$51$lambda$36 (): kotlin.Unit declared in com.saidim.clockface.clock.ClockStyleEditorActivity' type=@[ExtensionFunctionType] kotlin.Function1<com.google.android.material.textview.MaterialTextView, kotlin.Unit> origin=INLINE_LAMBDA reflectionTarget=null
+    VAR name:systemFonts type:kotlin.collections.MutableSet<kotlin.String> [val]
+      CALL 'public final fun mutableSetOf <T> (): kotlin.collections.MutableSet<T of kotlin.collections.SetsKt.mutableSetOf> [inline] declared in kotlin.collections.SetsKt' type=kotlin.collections.MutableSet<kotlin.String> origin=null
+        <T>: kotlin.String
+    WHEN type=kotlin.Unit origin=IF
+      BRANCH
+        if: CALL 'public final fun greaterOrEqual (arg0: kotlin.Int, arg1: kotlin.Int): kotlin.Boolean declared in kotlin.internal.ir' type=kotlin.Boolean origin=GTEQ
+          arg0: GET_FIELD 'FIELD IR_EXTERNAL_JAVA_DECLARATION_STUB name:SDK_INT type:kotlin.Int visibility:public [final,static] declared in android.os.Build.VERSION' type=kotlin.Int superQualifierSymbol=android.os.Build.VERSION origin=null
+          arg1: CONST Int type=kotlin.Int value=29
+        then: BLOCK type=kotlin.Unit origin=null
+          CALL 'public final fun forEach <T> (action: kotlin.Function1<T of kotlin.collections.CollectionsKt.forEach, kotlin.Unit>): kotlin.Unit [inline] declared in kotlin.collections.CollectionsKt' type=kotlin.Unit origin=null
+            <T>: @[FlexibleNullability] android.graphics.fonts.Font?
+            $receiver: BLOCK type=@[FlexibleMutability] kotlin.collections.MutableSet<@[FlexibleNullability] android.graphics.fonts.Font?> origin=null
+              VAR IR_TEMPORARY_VARIABLE name:tmp0 type:kotlin.Any? [val]
+                CALL 'public open fun getAvailableFonts (): @[EnhancedNullability] @[FlexibleMutability] kotlin.collections.MutableSet<@[FlexibleNullability] android.graphics.fonts.Font?> declared in android.graphics.fonts.SystemFonts' type=@[EnhancedNullability] @[FlexibleMutability] kotlin.collections.MutableSet<@[FlexibleNullability] android.graphics.fonts.Font?> origin=null
+              CALL 'public final fun checkNotNullExpressionValue (value: kotlin.Any?, expression: kotlin.String): kotlin.Unit declared in kotlin.jvm.internal.Intrinsics' type=kotlin.Unit origin=null
+                value: GET_VAR 'val tmp0: kotlin.Any? [val] declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=kotlin.Any? origin=null
+                expression: CONST String type=kotlin.String value="getAvailableFonts(...)"
+              GET_VAR 'val tmp0: kotlin.Any? [val] declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=kotlin.Any? origin=null
+            action: BLOCK type=kotlin.Function1<@[FlexibleNullability] android.graphics.fonts.Font?, kotlin.Unit> origin=LAMBDA
+              COMPOSITE type=kotlin.Unit origin=null
+              FUNCTION_REFERENCE 'private final fun createTypefaceSelectionCard$lambda$51$lambda$37 ($systemFonts: kotlin.collections.MutableSet<kotlin.String>, font: @[FlexibleNullability] android.graphics.fonts.Font?): kotlin.Unit declared in com.saidim.clockface.clock.ClockStyleEditorActivity' type=kotlin.Function1<@[FlexibleNullability] android.graphics.fonts.Font?, kotlin.Unit> origin=INLINE_LAMBDA reflectionTarget=null
+                $systemFonts: GET_VAR 'val systemFonts: kotlin.collections.MutableSet<kotlin.String> [val] declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=kotlin.collections.MutableSet<kotlin.String> origin=null
+    COMPOSITE type=kotlin.Unit origin=null
+      CALL 'public abstract fun addAll (elements: kotlin.collections.Collection<E of kotlin.collections.MutableSet>): kotlin.Boolean declared in kotlin.collections.MutableSet' type=kotlin.Boolean origin=null
+        $this: GET_VAR 'val systemFonts: kotlin.collections.MutableSet<kotlin.String> [val] declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=kotlin.collections.MutableSet<kotlin.String> origin=null
+        elements: CALL 'public final fun listOf <T> (vararg elements: T of kotlin.collections.CollectionsKt.listOf): kotlin.collections.List<T of kotlin.collections.CollectionsKt.listOf> declared in kotlin.collections.CollectionsKt' type=kotlin.collections.List<kotlin.String> origin=null
+          <T>: kotlin.String
+          elements: BLOCK type=kotlin.Array<out kotlin.String> origin=null
+            VAR IR_TEMPORARY_VARIABLE name:tmp0 type:kotlin.Array<out kotlin.String> [val]
+              CALL 'public final fun arrayOfNulls <T> (size: kotlin.Int): kotlin.Array<T of kotlin.arrayOfNulls?> declared in kotlin' type=kotlin.Array<out kotlin.String> origin=null
+                <T>: kotlin.String
+                size: CONST Int type=kotlin.Int value=16
+            CALL 'public final fun set (index: kotlin.Int, value: T of kotlin.Array): kotlin.Unit [operator] declared in kotlin.Array' type=kotlin.Unit origin=null
+              $this: GET_VAR 'val tmp0: kotlin.Array<out kotlin.String> [val] declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=kotlin.Array<out kotlin.String> origin=null
+              index: CONST Int type=kotlin.Int value=0
+              value: CONST String type=kotlin.String value="sans-serif"
+            CALL 'public final fun set (index: kotlin.Int, value: T of kotlin.Array): kotlin.Unit [operator] declared in kotlin.Array' type=kotlin.Unit origin=null
+              $this: GET_VAR 'val tmp0: kotlin.Array<out kotlin.String> [val] declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=kotlin.Array<out kotlin.String> origin=null
+              index: CONST Int type=kotlin.Int value=1
+              value: CONST String type=kotlin.String value="sans-serif-light"
+            CALL 'public final fun set (index: kotlin.Int, value: T of kotlin.Array): kotlin.Unit [operator] declared in kotlin.Array' type=kotlin.Unit origin=null
+              $this: GET_VAR 'val tmp0: kotlin.Array<out kotlin.String> [val] declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=kotlin.Array<out kotlin.String> origin=null
+              index: CONST Int type=kotlin.Int value=2
+              value: CONST String type=kotlin.String value="sans-serif-medium"
+            CALL 'public final fun set (index: kotlin.Int, value: T of kotlin.Array): kotlin.Unit [operator] declared in kotlin.Array' type=kotlin.Unit origin=null
+              $this: GET_VAR 'val tmp0: kotlin.Array<out kotlin.String> [val] declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=kotlin.Array<out kotlin.String> origin=null
+              index: CONST Int type=kotlin.Int value=3
+              value: CONST String type=kotlin.String value="sans-serif-bold"
+            CALL 'public final fun set (index: kotlin.Int, value: T of kotlin.Array): kotlin.Unit [operator] declared in kotlin.Array' type=kotlin.Unit origin=null
+              $this: GET_VAR 'val tmp0: kotlin.Array<out kotlin.String> [val] declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=kotlin.Array<out kotlin.String> origin=null
+              index: CONST Int type=kotlin.Int value=4
+              value: CONST String type=kotlin.String value="sans-serif-black"
+            CALL 'public final fun set (index: kotlin.Int, value: T of kotlin.Array): kotlin.Unit [operator] declared in kotlin.Array' type=kotlin.Unit origin=null
+              $this: GET_VAR 'val tmp0: kotlin.Array<out kotlin.String> [val] declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=kotlin.Array<out kotlin.String> origin=null
+              index: CONST Int type=kotlin.Int value=5
+              value: CONST String type=kotlin.String value="sans-serif-thin"
+            CALL 'public final fun set (index: kotlin.Int, value: T of kotlin.Array): kotlin.Unit [operator] declared in kotlin.Array' type=kotlin.Unit origin=null
+              $this: GET_VAR 'val tmp0: kotlin.Array<out kotlin.String> [val] declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=kotlin.Array<out kotlin.String> origin=null
+              index: CONST Int type=kotlin.Int value=6
+              value: CONST String type=kotlin.String value="sans-serif-condensed"
+            CALL 'public final fun set (index: kotlin.Int, value: T of kotlin.Array): kotlin.Unit [operator] declared in kotlin.Array' type=kotlin.Unit origin=null
+              $this: GET_VAR 'val tmp0: kotlin.Array<out kotlin.String> [val] declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=kotlin.Array<out kotlin.String> origin=null
+              index: CONST Int type=kotlin.Int value=7
+              value: CONST String type=kotlin.String value="sans-serif-condensed-light"
+            CALL 'public final fun set (index: kotlin.Int, value: T of kotlin.Array): kotlin.Unit [operator] declared in kotlin.Array' type=kotlin.Unit origin=null
+              $this: GET_VAR 'val tmp0: kotlin.Array<out kotlin.String> [val] declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=kotlin.Array<out kotlin.String> origin=null
+              index: CONST Int type=kotlin.Int value=8
+              value: CONST String type=kotlin.String value="sans-serif-condensed-medium"
+            CALL 'public final fun set (index: kotlin.Int, value: T of kotlin.Array): kotlin.Unit [operator] declared in kotlin.Array' type=kotlin.Unit origin=null
+              $this: GET_VAR 'val tmp0: kotlin.Array<out kotlin.String> [val] declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=kotlin.Array<out kotlin.String> origin=null
+              index: CONST Int type=kotlin.Int value=9
+              value: CONST String type=kotlin.String value="sans-serif-condensed-bold"
+            CALL 'public final fun set (index: kotlin.Int, value: T of kotlin.Array): kotlin.Unit [operator] declared in kotlin.Array' type=kotlin.Unit origin=null
+              $this: GET_VAR 'val tmp0: kotlin.Array<out kotlin.String> [val] declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=kotlin.Array<out kotlin.String> origin=null
+              index: CONST Int type=kotlin.Int value=10
+              value: CONST String type=kotlin.String value="serif"
+            CALL 'public final fun set (index: kotlin.Int, value: T of kotlin.Array): kotlin.Unit [operator] declared in kotlin.Array' type=kotlin.Unit origin=null
+              $this: GET_VAR 'val tmp0: kotlin.Array<out kotlin.String> [val] declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=kotlin.Array<out kotlin.String> origin=null
+              index: CONST Int type=kotlin.Int value=11
+              value: CONST String type=kotlin.String value="serif-bold"
+            CALL 'public final fun set (index: kotlin.Int, value: T of kotlin.Array): kotlin.Unit [operator] declared in kotlin.Array' type=kotlin.Unit origin=null
+              $this: GET_VAR 'val tmp0: kotlin.Array<out kotlin.String> [val] declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=kotlin.Array<out kotlin.String> origin=null
+              index: CONST Int type=kotlin.Int value=12
+              value: CONST String type=kotlin.String value="monospace"
+            CALL 'public final fun set (index: kotlin.Int, value: T of kotlin.Array): kotlin.Unit [operator] declared in kotlin.Array' type=kotlin.Unit origin=null
+              $this: GET_VAR 'val tmp0: kotlin.Array<out kotlin.String> [val] declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=kotlin.Array<out kotlin.String> origin=null
+              index: CONST Int type=kotlin.Int value=13
+              value: CONST String type=kotlin.String value="casual"
+            CALL 'public final fun set (index: kotlin.Int, value: T of kotlin.Array): kotlin.Unit [operator] declared in kotlin.Array' type=kotlin.Unit origin=null
+              $this: GET_VAR 'val tmp0: kotlin.Array<out kotlin.String> [val] declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=kotlin.Array<out kotlin.String> origin=null
+              index: CONST Int type=kotlin.Int value=14
+              value: CONST String type=kotlin.String value="cursive"
+            CALL 'public final fun set (index: kotlin.Int, value: T of kotlin.Array): kotlin.Unit [operator] declared in kotlin.Array' type=kotlin.Unit origin=null
+              $this: GET_VAR 'val tmp0: kotlin.Array<out kotlin.String> [val] declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=kotlin.Array<out kotlin.String> origin=null
+              index: CONST Int type=kotlin.Int value=15
+              value: CONST String type=kotlin.String value="system-ui"
+            GET_VAR 'val tmp0: kotlin.Array<out kotlin.String> [val] declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=kotlin.Array<out kotlin.String> origin=null
+      COMPOSITE type=kotlin.Unit origin=null
+    VAR name:groupedFonts type:java.util.SortedMap<kotlin.String, kotlin.collections.List<kotlin.String>> [val]
+      CALL 'public final fun toSortedMap <K, V> (): java.util.SortedMap<K of kotlin.collections.MapsKt.toSortedMap, V of kotlin.collections.MapsKt.toSortedMap> declared in kotlin.collections.MapsKt' type=java.util.SortedMap<kotlin.String, kotlin.collections.List<kotlin.String>> origin=null
+        <K>: kotlin.String
+        <V>: kotlin.collections.List<kotlin.String>
+        $receiver: CALL 'public final fun groupBy <T, K> (keySelector: kotlin.Function1<T of kotlin.collections.CollectionsKt.groupBy, K of kotlin.collections.CollectionsKt.groupBy>): kotlin.collections.Map<K of kotlin.collections.CollectionsKt.groupBy, kotlin.collections.List<T of kotlin.collections.CollectionsKt.groupBy>> [inline] declared in kotlin.collections.CollectionsKt' type=kotlin.collections.Map<kotlin.String, kotlin.collections.List<kotlin.String>> origin=null
+          <T>: kotlin.String
+          <K>: kotlin.String
+          $receiver: CALL 'public final fun filter <T> (predicate: kotlin.Function1<T of kotlin.collections.CollectionsKt.filter, kotlin.Boolean>): kotlin.collections.List<T of kotlin.collections.CollectionsKt.filter> [inline] declared in kotlin.collections.CollectionsKt' type=kotlin.collections.List<kotlin.String> origin=null
+            <T>: kotlin.String
+            $receiver: GET_VAR 'val systemFonts: kotlin.collections.MutableSet<kotlin.String> [val] declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=kotlin.collections.MutableSet<kotlin.String> origin=null
+            predicate: BLOCK type=kotlin.Function1<kotlin.String, kotlin.Boolean> origin=LAMBDA
+              COMPOSITE type=kotlin.Unit origin=null
+              FUNCTION_REFERENCE 'private final fun createTypefaceSelectionCard$lambda$51$lambda$38 (it: kotlin.String): kotlin.Boolean declared in com.saidim.clockface.clock.ClockStyleEditorActivity' type=kotlin.Function1<kotlin.String, kotlin.Boolean> origin=INLINE_LAMBDA reflectionTarget=null
+          keySelector: BLOCK type=kotlin.Function1<kotlin.String, kotlin.String> origin=LAMBDA
+            COMPOSITE type=kotlin.Unit origin=null
+            FUNCTION_REFERENCE 'private final fun createTypefaceSelectionCard$lambda$51$lambda$39 (family: kotlin.String): kotlin.String declared in com.saidim.clockface.clock.ClockStyleEditorActivity' type=kotlin.Function1<kotlin.String, kotlin.String> origin=INLINE_LAMBDA reflectionTarget=null
+    VAR name:scrollView type:android.widget.ScrollView [val]
+      CALL 'public final fun apply <T> (block: @[ExtensionFunctionType] kotlin.Function1<T of kotlin.StandardKt.apply, kotlin.Unit>): T of kotlin.StandardKt.apply [inline] declared in kotlin.StandardKt' type=android.widget.ScrollView origin=null
+        <T>: android.widget.ScrollView
+        $receiver: CONSTRUCTOR_CALL 'public constructor <init> (p0: @[FlexibleNullability] android.content.Context?) declared in android.widget.ScrollView' type=android.widget.ScrollView origin=null
+          p0: CALL 'public final fun getContext (): @[FlexibleNullability] android.content.Context? [fake_override] declared in android.widget.LinearLayout' type=@[FlexibleNullability] android.content.Context? origin=GET_PROPERTY
+            $this: GET_VAR '$this$apply: android.widget.LinearLayout declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=android.widget.LinearLayout origin=null
+        block: BLOCK type=@[ExtensionFunctionType] kotlin.Function1<android.widget.ScrollView, kotlin.Unit> origin=LAMBDA
+          COMPOSITE type=kotlin.Unit origin=null
+          FUNCTION_REFERENCE 'private final fun createTypefaceSelectionCard$lambda$51$lambda$41 (): kotlin.Unit declared in com.saidim.clockface.clock.ClockStyleEditorActivity' type=@[ExtensionFunctionType] kotlin.Function1<android.widget.ScrollView, kotlin.Unit> origin=INLINE_LAMBDA reflectionTarget=null
+    VAR name:fontGroupsContainer type:android.widget.LinearLayout [val]
+      CALL 'public final fun apply <T> (block: @[ExtensionFunctionType] kotlin.Function1<T of kotlin.StandardKt.apply, kotlin.Unit>): T of kotlin.StandardKt.apply [inline] declared in kotlin.StandardKt' type=android.widget.LinearLayout origin=null
+        <T>: android.widget.LinearLayout
+        $receiver: CONSTRUCTOR_CALL 'public constructor <init> (p0: @[FlexibleNullability] android.content.Context?) declared in android.widget.LinearLayout' type=android.widget.LinearLayout origin=null
+          p0: CALL 'public final fun getContext (): @[FlexibleNullability] android.content.Context? [fake_override] declared in android.widget.LinearLayout' type=@[FlexibleNullability] android.content.Context? origin=GET_PROPERTY
+            $this: GET_VAR '$this$apply: android.widget.LinearLayout declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=android.widget.LinearLayout origin=null
+        block: BLOCK type=@[ExtensionFunctionType] kotlin.Function1<android.widget.LinearLayout, kotlin.Unit> origin=LAMBDA
+          COMPOSITE type=kotlin.Unit origin=null
+          FUNCTION_REFERENCE 'private final fun createTypefaceSelectionCard$lambda$51$lambda$42 (): kotlin.Unit declared in com.saidim.clockface.clock.ClockStyleEditorActivity' type=@[ExtensionFunctionType] kotlin.Function1<android.widget.LinearLayout, kotlin.Unit> origin=INLINE_LAMBDA reflectionTarget=null
+    CALL 'public final fun forEach <K, V> (action: kotlin.Function1<kotlin.collections.Map.Entry<K of kotlin.collections.MapsKt.forEach, V of kotlin.collections.MapsKt.forEach>, kotlin.Unit>): kotlin.Unit [inline] declared in kotlin.collections.MapsKt' type=kotlin.Unit origin=null
+      <K>: @[FlexibleNullability] kotlin.String?
+      <V>: @[FlexibleNullability] kotlin.collections.List<kotlin.String>?
+      $receiver: GET_VAR 'val groupedFonts: java.util.SortedMap<kotlin.String, kotlin.collections.List<kotlin.String>> [val] declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=java.util.SortedMap<kotlin.String, kotlin.collections.List<kotlin.String>> origin=null
+      action: BLOCK type=kotlin.Function1<kotlin.collections.Map.Entry<@[FlexibleNullability] kotlin.String?, @[FlexibleNullability] kotlin.collections.List<kotlin.String>?>, kotlin.Unit> origin=LAMBDA
+        COMPOSITE type=kotlin.Unit origin=null
+        FUNCTION_REFERENCE 'private final fun createTypefaceSelectionCard$lambda$51$lambda$50 ($fontGroupsContainer: android.widget.LinearLayout, $this_apply: android.widget.LinearLayout, $initialTypeface: kotlin.String, $onTypefaceSelected: kotlin.Function1<kotlin.String, kotlin.Unit>, <destruct>: kotlin.collections.Map.Entry<@[FlexibleNullability] kotlin.String?, @[FlexibleNullability] kotlin.collections.List<kotlin.String>?>): kotlin.Unit declared in com.saidim.clockface.clock.ClockStyleEditorActivity' type=kotlin.Function1<kotlin.collections.Map.Entry<@[FlexibleNullability] kotlin.String?, @[FlexibleNullability] kotlin.collections.List<kotlin.String>?>, kotlin.Unit> origin=INLINE_LAMBDA reflectionTarget=null
+          $fontGroupsContainer: GET_VAR 'val fontGroupsContainer: android.widget.LinearLayout [val] declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=android.widget.LinearLayout origin=null
+          $this_apply: GET_VAR '$this$apply: android.widget.LinearLayout declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=android.widget.LinearLayout origin=null
+          $initialTypeface: GET_VAR '$initialTypeface: kotlin.String declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=kotlin.String origin=null
+          $onTypefaceSelected: GET_VAR '$onTypefaceSelected: kotlin.Function1<kotlin.String, kotlin.Unit> declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=kotlin.Function1<kotlin.String, kotlin.Unit> origin=null
+    CALL 'public open fun addView (p0: @[FlexibleNullability] android.view.View?): kotlin.Unit declared in android.widget.ScrollView' type=kotlin.Unit origin=null
+      $this: GET_VAR 'val scrollView: android.widget.ScrollView [val] declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=android.widget.ScrollView origin=null
+      p0: GET_VAR 'val fontGroupsContainer: android.widget.LinearLayout [val] declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=android.widget.LinearLayout origin=null
+    CALL 'public open fun addView (p0: @[FlexibleNullability] android.view.View?): kotlin.Unit [fake_override] declared in android.widget.LinearLayout' type=kotlin.Unit origin=null
+      $this: GET_VAR '$this$apply: android.widget.LinearLayout declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=android.widget.LinearLayout origin=null
+      p0: GET_VAR 'val scrollView: android.widget.ScrollView [val] declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=android.widget.ScrollView origin=null
+    CALL 'public open fun addView (p0: @[FlexibleNullability] android.view.View?): kotlin.Unit [fake_override] declared in android.widget.LinearLayout' type=kotlin.Unit origin=null
+      $this: GET_VAR '$this$apply: android.widget.LinearLayout declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=android.widget.LinearLayout origin=null
+      p0: CALL 'private final fun createStyleOptions (initialTypeface: kotlin.String, onTypefaceSelected: kotlin.Function1<kotlin.String, kotlin.Unit>): android.view.View declared in com.saidim.clockface.clock.ClockStyleEditorActivity' type=android.view.View origin=null
+        $this: GET_VAR 'this$0: com.saidim.clockface.clock.ClockStyleEditorActivity declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=com.saidim.clockface.clock.ClockStyleEditorActivity origin=null
+        initialTypeface: GET_VAR '$initialTypeface: kotlin.String declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=kotlin.String origin=null
+        onTypefaceSelected: GET_VAR '$onTypefaceSelected: kotlin.Function1<kotlin.String, kotlin.Unit> declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51' type=kotlin.Function1<kotlin.String, kotlin.Unit> origin=null
+
+	at org.jetbrains.kotlin.backend.jvm.codegen.FunctionCodegen.generate(FunctionCodegen.kt:47)
+	at org.jetbrains.kotlin.backend.jvm.codegen.IrSourceCompilerForInline.generateLambdaBody(IrSourceCompilerForInline.kt:67)
+	at org.jetbrains.kotlin.codegen.inline.ExpressionLambda.generateLambdaBody(LambdaInfo.kt:72)
+	at org.jetbrains.kotlin.backend.jvm.codegen.IrInlineCodegen.genValueAndPut(IrInlineCodegen.kt:100)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ExpressionCodegen.visitCall$handleParameter(ExpressionCodegen.kt:616)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ExpressionCodegen.visitCall(ExpressionCodegen.kt:644)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ExpressionCodegen.visitCall(ExpressionCodegen.kt:138)
+	at org.jetbrains.kotlin.ir.expressions.IrCall.accept(IrCall.kt:24)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ExpressionCodegen.visitReturn(ExpressionCodegen.kt:1051)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ExpressionCodegen.visitReturn(ExpressionCodegen.kt:138)
+	at org.jetbrains.kotlin.ir.expressions.IrReturn.accept(IrReturn.kt:24)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ExpressionCodegen.visitStatementContainer(ExpressionCodegen.kt:579)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ExpressionCodegen.visitBlockBody(ExpressionCodegen.kt:584)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ExpressionCodegen.visitBlockBody(ExpressionCodegen.kt:138)
+	at org.jetbrains.kotlin.ir.expressions.IrBlockBody.accept(IrBlockBody.kt:20)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ExpressionCodegen.generate(ExpressionCodegen.kt:240)
+	at org.jetbrains.kotlin.backend.jvm.codegen.FunctionCodegen.doGenerate(FunctionCodegen.kt:123)
+	at org.jetbrains.kotlin.backend.jvm.codegen.FunctionCodegen.generate(FunctionCodegen.kt:44)
+	... 56 more
+Caused by: java.lang.RuntimeException: Exception while generating code for:
+FUN INLINE_LAMBDA name:createTypefaceSelectionCard$lambda$51$lambda$41 visibility:private modality:FINAL <> ($receiver:android.widget.ScrollView) returnType:kotlin.Unit
+  $receiver: VALUE_PARAMETER name:$this$apply type:android.widget.ScrollView
+  BLOCK_BODY
+    VAR name:$i$a$-apply-ClockStyleEditorActivity$createTypefaceSelectionCard$1$scrollView$1 type:kotlin.Int [val]
+      CONST Int type=kotlin.Int value=0
+    CALL 'public open fun setLayoutParams (p0: @[FlexibleNullability] android.view.ViewGroup.LayoutParams?): kotlin.Unit [fake_override] declared in android.widget.ScrollView' type=kotlin.Unit origin=EQ
+      $this: GET_VAR '$this$apply: android.widget.ScrollView declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51$lambda$41' type=android.widget.ScrollView origin=null
+      p0: CALL 'public final fun apply <T> (block: @[ExtensionFunctionType] kotlin.Function1<T of kotlin.StandardKt.apply, kotlin.Unit>): T of kotlin.StandardKt.apply [inline] declared in kotlin.StandardKt' type=android.widget.LinearLayout.LayoutParams origin=null
+        <T>: android.widget.LinearLayout.LayoutParams
+        $receiver: CONSTRUCTOR_CALL 'public constructor <init> (p0: kotlin.Int, p1: kotlin.Int) declared in android.widget.LinearLayout.LayoutParams' type=android.widget.LinearLayout.LayoutParams origin=null
+          p0: CONST Int type=kotlin.Int value=-1
+          p1: CONST Int type=kotlin.Int value=-2
+        block: BLOCK type=@[ExtensionFunctionType] kotlin.Function1<android.widget.LinearLayout.LayoutParams, kotlin.Unit> origin=LAMBDA
+          COMPOSITE type=kotlin.Unit origin=null
+          FUNCTION_REFERENCE 'private final fun createTypefaceSelectionCard$lambda$51$lambda$41$lambda$40 ($this_apply: android.widget.ScrollView): kotlin.Unit declared in com.saidim.clockface.clock.ClockStyleEditorActivity' type=@[ExtensionFunctionType] kotlin.Function1<android.widget.LinearLayout.LayoutParams, kotlin.Unit> origin=INLINE_LAMBDA reflectionTarget=null
+            $this_apply: GET_VAR '$this$apply: android.widget.ScrollView declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51$lambda$41' type=android.widget.ScrollView origin=null
+
+	at org.jetbrains.kotlin.backend.jvm.codegen.FunctionCodegen.generate(FunctionCodegen.kt:47)
+	at org.jetbrains.kotlin.backend.jvm.codegen.IrSourceCompilerForInline.generateLambdaBody(IrSourceCompilerForInline.kt:67)
+	at org.jetbrains.kotlin.codegen.inline.ExpressionLambda.generateLambdaBody(LambdaInfo.kt:72)
+	at org.jetbrains.kotlin.backend.jvm.codegen.IrInlineCodegen.genValueAndPut(IrInlineCodegen.kt:100)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ExpressionCodegen.visitCall$handleParameter(ExpressionCodegen.kt:616)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ExpressionCodegen.visitCall(ExpressionCodegen.kt:644)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ExpressionCodegen.visitCall(ExpressionCodegen.kt:138)
+	at org.jetbrains.kotlin.ir.expressions.IrCall.accept(IrCall.kt:24)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ExpressionCodegen.visitVariable(ExpressionCodegen.kt:790)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ExpressionCodegen.visitVariable(ExpressionCodegen.kt:138)
+	at org.jetbrains.kotlin.ir.declarations.IrVariable.accept(IrVariable.kt:36)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ExpressionCodegen.visitStatementContainer(ExpressionCodegen.kt:579)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ExpressionCodegen.visitBlockBody(ExpressionCodegen.kt:584)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ExpressionCodegen.visitBlockBody(ExpressionCodegen.kt:138)
+	at org.jetbrains.kotlin.ir.expressions.IrBlockBody.accept(IrBlockBody.kt:20)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ExpressionCodegen.generate(ExpressionCodegen.kt:240)
+	at org.jetbrains.kotlin.backend.jvm.codegen.FunctionCodegen.doGenerate(FunctionCodegen.kt:123)
+	at org.jetbrains.kotlin.backend.jvm.codegen.FunctionCodegen.generate(FunctionCodegen.kt:44)
+	... 73 more
+Caused by: java.lang.RuntimeException: Exception while generating code for:
+FUN INLINE_LAMBDA name:createTypefaceSelectionCard$lambda$51$lambda$41$lambda$40 visibility:private modality:FINAL <> ($receiver:android.widget.LinearLayout.LayoutParams, $this_apply:android.widget.ScrollView) returnType:kotlin.Unit
+  $receiver: VALUE_PARAMETER name:$this$apply type:android.widget.LinearLayout.LayoutParams
+  VALUE_PARAMETER BOUND_VALUE_PARAMETER name:$this_apply index:0 type:android.widget.ScrollView
+  BLOCK_BODY
+    VAR name:$i$a$-apply-ClockStyleEditorActivity$createTypefaceSelectionCard$1$scrollView$1$1 type:kotlin.Int [val]
+      CONST Int type=kotlin.Int value=0
+    SET_FIELD 'FIELD IR_EXTERNAL_JAVA_DECLARATION_STUB name:maxHeight type:kotlin.Int visibility:public [final,static] declared in android.R.attr' type=kotlin.Unit superQualifierSymbol=android.R.attr origin=EQ
+      value: CALL 'public open fun getDimensionPixelSize (p0: kotlin.Int): kotlin.Int declared in android.content.res.Resources' type=kotlin.Int origin=null
+        $this: CALL 'public open fun getResources (): @[FlexibleNullability] android.content.res.Resources? [fake_override] declared in android.widget.ScrollView' type=@[FlexibleNullability] android.content.res.Resources? origin=GET_PROPERTY
+          $this: GET_VAR '$this_apply: android.widget.ScrollView declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51$lambda$41$lambda$40' type=android.widget.ScrollView origin=null
+        p0: GET_FIELD 'FIELD IR_EXTERNAL_JAVA_DECLARATION_STUB name:font_selector_max_height type:kotlin.Int visibility:public [static] declared in com.saidim.clockface.R.dimen' type=kotlin.Int superQualifierSymbol=com.saidim.clockface.R.dimen origin=null
+
+	at org.jetbrains.kotlin.backend.jvm.codegen.FunctionCodegen.generate(FunctionCodegen.kt:47)
+	at org.jetbrains.kotlin.backend.jvm.codegen.IrSourceCompilerForInline.generateLambdaBody(IrSourceCompilerForInline.kt:67)
+	at org.jetbrains.kotlin.codegen.inline.ExpressionLambda.generateLambdaBody(LambdaInfo.kt:72)
+	at org.jetbrains.kotlin.backend.jvm.codegen.IrInlineCodegen.genValueAndPut(IrInlineCodegen.kt:100)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ExpressionCodegen.visitCall$handleParameter(ExpressionCodegen.kt:616)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ExpressionCodegen.visitCall(ExpressionCodegen.kt:644)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ExpressionCodegen.visitCall(ExpressionCodegen.kt:138)
+	at org.jetbrains.kotlin.ir.expressions.IrCall.accept(IrCall.kt:24)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ExpressionCodegen.gen(ExpressionCodegen.kt:217)
+	at org.jetbrains.kotlin.backend.jvm.codegen.IrCallGenerator.genValueAndPut(IrCallGenerator.kt:48)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ExpressionCodegen.visitCall$handleParameter(ExpressionCodegen.kt:616)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ExpressionCodegen.visitCall(ExpressionCodegen.kt:644)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ExpressionCodegen.visitCall(ExpressionCodegen.kt:138)
+	at org.jetbrains.kotlin.ir.expressions.IrCall.accept(IrCall.kt:24)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ExpressionCodegen.visitStatementContainer(ExpressionCodegen.kt:579)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ExpressionCodegen.visitBlockBody(ExpressionCodegen.kt:584)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ExpressionCodegen.visitBlockBody(ExpressionCodegen.kt:138)
+	at org.jetbrains.kotlin.ir.expressions.IrBlockBody.accept(IrBlockBody.kt:20)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ExpressionCodegen.generate(ExpressionCodegen.kt:240)
+	at org.jetbrains.kotlin.backend.jvm.codegen.FunctionCodegen.doGenerate(FunctionCodegen.kt:123)
+	at org.jetbrains.kotlin.backend.jvm.codegen.FunctionCodegen.generate(FunctionCodegen.kt:44)
+	... 90 more
+Caused by: java.lang.AssertionError: access of const val: SET_FIELD 'FIELD IR_EXTERNAL_JAVA_DECLARATION_STUB name:maxHeight type:kotlin.Int visibility:public [final,static] declared in android.R.attr' type=kotlin.Unit superQualifierSymbol=android.R.attr origin=EQ
+  value: CALL 'public open fun getDimensionPixelSize (p0: kotlin.Int): kotlin.Int declared in android.content.res.Resources' type=kotlin.Int origin=null
+    $this: CALL 'public open fun getResources (): @[FlexibleNullability] android.content.res.Resources? [fake_override] declared in android.widget.ScrollView' type=@[FlexibleNullability] android.content.res.Resources? origin=GET_PROPERTY
+      $this: GET_VAR '$this_apply: android.widget.ScrollView declared in com.saidim.clockface.clock.ClockStyleEditorActivity.createTypefaceSelectionCard$lambda$51$lambda$41$lambda$40' type=android.widget.ScrollView origin=null
+    p0: GET_FIELD 'FIELD IR_EXTERNAL_JAVA_DECLARATION_STUB name:font_selector_max_height type:kotlin.Int visibility:public [static] declared in com.saidim.clockface.R.dimen' type=kotlin.Int superQualifierSymbol=com.saidim.clockface.R.dimen origin=null
+
+	at org.jetbrains.kotlin.backend.jvm.codegen.ExpressionCodegen.visitFieldAccess(ExpressionCodegen.kt:861)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ExpressionCodegen.visitFieldAccess(ExpressionCodegen.kt:138)
+	at org.jetbrains.kotlin.ir.visitors.IrElementVisitor$DefaultImpls.visitSetField(IrElementVisitor.kt:206)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ExpressionCodegen.visitSetField(ExpressionCodegen.kt:908)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ExpressionCodegen.visitSetField(ExpressionCodegen.kt:138)
+	at org.jetbrains.kotlin.ir.expressions.IrSetField.accept(IrSetField.kt:21)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ExpressionCodegen.visitStatementContainer(ExpressionCodegen.kt:579)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ExpressionCodegen.visitBlockBody(ExpressionCodegen.kt:584)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ExpressionCodegen.visitBlockBody(ExpressionCodegen.kt:138)
+	at org.jetbrains.kotlin.ir.expressions.IrBlockBody.accept(IrBlockBody.kt:20)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ExpressionCodegen.generate(ExpressionCodegen.kt:240)
+	at org.jetbrains.kotlin.backend.jvm.codegen.FunctionCodegen.doGenerate(FunctionCodegen.kt:123)
+	at org.jetbrains.kotlin.backend.jvm.codegen.FunctionCodegen.generate(FunctionCodegen.kt:44)
+	... 110 more
+
+
