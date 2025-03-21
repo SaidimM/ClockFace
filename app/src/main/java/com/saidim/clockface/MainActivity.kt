@@ -9,6 +9,7 @@ import com.google.android.material.button.MaterialButton
 import com.saidim.clockface.background.BackgroundSettingsActivity
 import com.saidim.clockface.clock.ClockStylesActivity
 import com.saidim.clockface.base.BaseActivity
+import com.saidim.clockface.clock.ColorPickerActivity
 import com.saidim.clockface.databinding.ActivityMainBinding
 
 class MainActivity : BaseActivity() {
@@ -65,7 +66,7 @@ class MainActivity : BaseActivity() {
     }
 
     private fun openSettings() {
-        // TODO: Implement settings activity
+        startActivity(Intent(this, ColorPickerActivity::class.java))
     }
 
     companion object {

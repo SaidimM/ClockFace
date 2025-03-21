@@ -46,6 +46,10 @@
                 android:name=".clock.ClockStyleEditorActivity"
                 android:exported="false"
                 android:theme="@style/Theme.ClockFace"/>
+        <activity
+                android:name=".clock.ColorPickerActivity"
+                android:exported="false"
+                android:theme="@style/Theme.ClockFace"/>
     </application>
 
 </manifest>
