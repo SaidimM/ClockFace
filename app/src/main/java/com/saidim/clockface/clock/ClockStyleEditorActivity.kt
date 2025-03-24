@@ -1,51 +1,27 @@
 package com.saidim.clockface.clock
 
 import ClockStyle
-import android.R.attr.maxHeight
-import android.annotation.SuppressLint
 import android.content.res.ColorStateList
-import android.graphics.Color
-import android.graphics.Typeface
-import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import androidx.activity.viewModels
+import androidx.core.view.updatePadding
 import androidx.lifecycle.lifecycleScope
-import com.google.android.material.button.MaterialButton
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.elevation.SurfaceColors
 import com.google.android.material.materialswitch.MaterialSwitch
+import com.google.android.material.shape.MaterialShapeDrawable
+import com.google.android.material.shape.ShapeAppearanceModel
+import com.google.android.material.textview.MaterialTextView
+import com.saidim.clockface.R
 import com.saidim.clockface.base.BaseActivity
 import com.saidim.clockface.databinding.ActivityClockStyleEditorBinding
-import com.saidim.clockface.clock.syles.ClockStyleConfig
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import java.util.*
-import android.widget.ArrayAdapter
-import com.google.android.material.textfield.MaterialAutoCompleteTextView
-import com.google.android.material.textfield.TextInputLayout
-import androidx.appcompat.view.ContextThemeWrapper
-import com.saidim.clockface.R
-import com.google.android.material.textview.MaterialTextView
-import com.google.android.material.button.MaterialButtonToggleGroup
-import com.google.android.material.shape.ShapeAppearanceModel
-import com.google.android.material.shape.MaterialShapeDrawable
-import com.google.android.material.elevation.SurfaceColors
-import androidx.core.content.ContextCompat
-import androidx.core.view.updatePadding
-import android.widget.ScrollView
-import android.view.Gravity
-import android.widget.HorizontalScrollView
-import android.widget.RadioGroup
-import com.google.android.material.color.MaterialColors
-import com.google.android.material.radiobutton.MaterialRadioButton
-import com.google.android.material.bottomsheet.BottomSheetDialog
-import android.text.Editable
-import android.text.TextWatcher
-import android.view.ViewGroup
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.textfield.TextInputEditText
-import com.google.android.material.card.MaterialCardView
+import java.util.Timer
+import java.util.TimerTask
 
 class ClockStyleEditorActivity : BaseActivity() {
     private val viewModel: ClockStyleEditorViewModel by viewModels()
@@ -161,14 +137,14 @@ class ClockStyleEditorActivity : BaseActivity() {
                 setMargins(24, 8, 24, 8)
             }
             updatePadding(left = 24, top = 20, right = 24, bottom = 20)
-            
+
             addView(MaterialSwitch(context).apply {
                 text = title
                 isChecked = initialState
                 setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_BodyLarge)
                 setOnCheckedChangeListener { _, checked -> onChanged(checked) }
             })
-            
+
             addView(MaterialTextView(context).apply {
                 text = subtitle
                 setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_BodyMedium)

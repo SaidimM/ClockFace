@@ -1,55 +1,59 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          xmlns:tools="http://schemas.android.com/tools"
-          package="com.saidim.clockface">
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.saidim.clockface">
 
-    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <!-- For Android 13+ -->
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" /> <!-- For Android 13+ -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
-            android:name=".App"
-            android:allowBackup="true"
-            android:dataExtractionRules="@xml/data_extraction_rules"
-            android:fullBackupContent="@xml/backup_rules"
-            android:icon="@mipmap/ic_launcher"
-            android:label="@string/app_name"
-            android:roundIcon="@mipmap/ic_launcher_round"
-            android:supportsRtl="true"
-            android:theme="@style/Theme.ClockFace"
-            tools:targetApi="31">
+        android:name=".App"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.ClockFace"
+        tools:targetApi="31">
         <activity
-                android:name=".MainActivity"
-                android:exported="true">
+            android:name=".TestActivity"
+            android:exported="false"
+            android:label="@string/title_activity_test"
+            android:theme="@style/Theme.ClockFace" />
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
+                <action android:name="android.intent.action.MAIN" />
 
-                <category android:name="android.intent.category.LAUNCHER"/>
+                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         <activity
-                android:name=".ClockDisplayActivity"
-                android:exported="false"
-                android:theme="@style/Theme.ClockFace.Fullscreen"
-                android:screenOrientation="fullSensor"/>
+            android:name=".ClockDisplayActivity"
+            android:exported="false"
+            android:screenOrientation="fullSensor"
+            android:theme="@style/Theme.ClockFace.Fullscreen" />
         <activity
-                android:name=".background.BackgroundSettingsActivity"
-                android:exported="false"
-                android:label="Background Settings"/>
+            android:name=".background.BackgroundSettingsActivity"
+            android:exported="false"
+            android:label="Background Settings" />
         <activity
-                android:name=".clock.ClockStylesActivity"
-                android:exported="false"
-                android:label="Clock Styles"/>
+            android:name=".clock.ClockStylesActivity"
+            android:exported="false"
+            android:label="Clock Styles" />
         <activity
-                android:name=".clock.ClockStyleEditorActivity"
-                android:exported="false"
-                android:theme="@style/Theme.ClockFace"/>
+            android:name=".clock.ClockStyleEditorActivity"
+            android:exported="false"
+            android:theme="@style/Theme.ClockFace" />
         <activity
-                android:name=".clock.ColorPickerActivity"
-                android:exported="false"
-                android:theme="@style/Theme.ClockFace"/>
+            android:name=".clock.ColorPickerActivity"
+            android:exported="false"
+            android:theme="@style/Theme.ClockFace" />
     </application>
 
 </manifest>
