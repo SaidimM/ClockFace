@@ -45,15 +45,16 @@
         <activity
             android:name=".clock.ClockStylesActivity"
             android:exported="false"
-            android:label="Clock Styles" />
+            android:label="Clock Styles"
+            android:theme="@style/Theme.Material3.DayNight.NoActionBar" />
         <activity
             android:name=".clock.ClockStyleEditorActivity"
             android:exported="false"
-            android:theme="@style/Theme.ClockFace" />
+            android:theme="@style/Theme.Material3.DayNight.NoActionBar" />
         <activity
             android:name=".clock.ColorPickerActivity"
             android:exported="false"
-            android:theme="@style/Theme.ClockFace" />
+            android:theme="@style/Theme.Material3.DayNight.NoActionBar" />
     </application>
 
 </manifest>

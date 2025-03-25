@@ -1,5 +1,6 @@
 package com.saidim.clockface.clock
 
+import ClockStyle
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
