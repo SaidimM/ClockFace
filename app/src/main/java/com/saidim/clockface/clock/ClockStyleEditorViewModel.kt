@@ -1,14 +1,16 @@
 package com.saidim.clockface.clock
 
 import android.app.Application
-import android.graphics.Color
 import android.graphics.Typeface
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.saidim.clockface.settings.AppSettings
 import com.saidim.clockface.clock.syles.ClockStyleConfig
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -30,20 +32,32 @@ class ClockStyleEditorViewModel(application: Application) : AndroidViewModel(app
     private val _showBinaryLabels = MutableStateFlow(true)
     val showBinaryLabels: StateFlow<Boolean> = _showBinaryLabels
 
-    private val _binaryActiveColor = MutableStateFlow(Color.GREEN)
-    val binaryActiveColor: StateFlow<Int> = _binaryActiveColor
+    private val _binaryActiveColor = MutableStateFlow(Color.Green)
+    val binaryActiveColor: StateFlow<Color> = _binaryActiveColor
 
     private val _useWordCasual = MutableStateFlow(true)
     val useWordCasual: StateFlow<Boolean> = _useWordCasual
 
-    private val _minimalFontColor = MutableStateFlow(Color.WHITE)
-    val minimalFontColor: StateFlow<Int> = _minimalFontColor
+    private val _minimalFontColor = MutableStateFlow(Color.White)
+    val minimalFontColor: StateFlow<Color> = _minimalFontColor
 
     private val _minimalFontSize = MutableStateFlow(ClockStyleConfig.MinimalConfig.FontSize.MEDIUM)
     val minimalFontSize: StateFlow<ClockStyleConfig.MinimalConfig.FontSize> = _minimalFontSize
 
     private val _minimalTypefaceStyle = MutableStateFlow("sans-serif")
     val minimalTypefaceStyle: StateFlow<String> = _minimalTypefaceStyle
+
+    private val _clockColor = MutableStateFlow(Color.White)
+    val clockColor = _clockColor.asStateFlow()
+
+    private val _clockFontFamily = MutableStateFlow("Default")
+    val clockFontFamily = _clockFontFamily.asStateFlow()
+
+    private val _clockSize = MutableStateFlow(1.0f)
+    val clockSize = _clockSize.asStateFlow()
+
+    private val _clockAnimation = MutableStateFlow(ClockAnimation.NONE)
+    val clockAnimation = _clockAnimation.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -88,7 +102,7 @@ class ClockStyleEditorViewModel(application: Application) : AndroidViewModel(app
         }
     }
 
-    fun setBinaryActiveColor(color: Int) {
+    fun setBinaryActiveColor(color: Color) {
         viewModelScope.launch {
             _binaryActiveColor.value = color
             // Save to settings
@@ -102,7 +116,7 @@ class ClockStyleEditorViewModel(application: Application) : AndroidViewModel(app
         }
     }
 
-    fun setMinimalFontColor(color: Int) {
+    fun setMinimalFontColor(color: Color) {
         viewModelScope.launch {
             _minimalFontColor.value = color
             updateMinimalConfig()
@@ -123,11 +137,33 @@ class ClockStyleEditorViewModel(application: Application) : AndroidViewModel(app
         }
     }
 
+    fun setClockColor(color: Color) {
+        _clockColor.value = color
+    }
+
+    fun setClockFontFamily(fontFamily: String) {
+        _clockFontFamily.value = fontFamily
+    }
+
+    fun setClockSize(size: Float) {
+        _clockSize.value = size
+    }
+
+    fun setClockAnimation(animation: ClockAnimation) {
+        _clockAnimation.value = animation
+    }
+
+    fun saveSettings() {
+        viewModelScope.launch {
+            // Save all settings to datastore or preferences
+        }
+    }
+
     private suspend fun updateMinimalConfig() {
         val config = ClockStyleConfig.MinimalConfig(
             is24Hour = _is24Hour.value,
             showSeconds = _showSeconds.value,
-            fontColor = _minimalFontColor.value,
+            fontColor = _minimalFontColor.value.toArgb(),
             fontSize = _minimalFontSize.value,
             typefaceStyle = _minimalTypefaceStyle.value
         )

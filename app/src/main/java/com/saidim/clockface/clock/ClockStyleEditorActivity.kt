@@ -1,6 +1,7 @@
 package com.saidim.clockface.clock
 
 import ClockStyle
+import android.graphics.Typeface
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -27,6 +28,15 @@ import java.util.Timer
 import java.util.TimerTask
 import androidx.compose.ui.viewinterop.AndroidView
 import android.widget.TextView
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalDensity
 import com.saidim.clockface.clock.ClockStyleEditorActivity.Companion.SHARED_ELEMENT_NAME
 
@@ -42,6 +52,12 @@ class ClockStyleEditorActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val style = intent.getSerializableExtra(EXTRA_STYLE) as ClockStyle
+
+        // Ensure only Minimal style is edited
+        if (style != ClockStyle.MINIMAL) {
+            finish()
+            return
+        }
 
         setContent {
             ClockFaceTheme {
@@ -94,7 +110,12 @@ fun ClockStyleEditorScreen(
     var currentTime by remember { mutableStateOf(ClockStyleFormatter.formatTime(style)) }
     val context = LocalContext.current
     val textSize = getDisplayLargeTextSize()
-    val lifecycleScope = rememberCoroutineScope()
+
+    // Collect state from ViewModel
+    val clockColor by viewModel.clockColor.collectAsState()
+    val clockFontFamily by viewModel.clockFontFamily.collectAsState()
+    val clockSize by viewModel.clockSize.collectAsState()
+    val clockAnimation by viewModel.clockAnimation.collectAsState()
 
     LaunchedEffect(Unit) {
         Timer().apply {
@@ -124,7 +145,7 @@ fun ClockStyleEditorScreen(
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Preview section
+            // Preview section with applied settings
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -147,17 +168,105 @@ fun ClockStyleEditorScreen(
                         update = { textView ->
                             textView.text = currentTime
                             textView.textAlignment = android.view.View.TEXT_ALIGNMENT_CENTER
-                            textView.textSize = textSize
+                            textView.textSize = textSize * clockSize
+                            textView.setTextColor(clockColor.toArgb())
+
+                            // Try to apply font family if available
+                            try {
+                                if (clockFontFamily != "Default") {
+                                    textView.typeface = Typeface.create(clockFontFamily, Typeface.NORMAL)
+                                }
+                            } catch (e: Exception) {
+                                // Fallback to default typeface if the requested one is not available
+                            }
                         }
                     )
                 }
             }
 
-            // Controls section
-            when (style) {
-                ClockStyle.MINIMAL -> MinimalControls(viewModel)
-                ClockStyle.ANALOG -> AnalogControls(viewModel)
-                ClockStyle.WORD -> WordControls(viewModel)
+            // Common style settings
+            Text(
+                text = "Style Settings",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+
+            // Color Picker
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Box(modifier = Modifier.padding(16.dp)) {
+                    ColorPickerSection(
+                        currentColor = clockColor,
+                        onColorSelected = { viewModel.setClockColor(it) }
+                    )
+                }
+            }
+
+            // Font Style Selector
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Box(modifier = Modifier.padding(16.dp)) {
+                    FontStyleSelector(
+                        selectedFont = clockFontFamily,
+                        onFontSelected = { viewModel.setClockFontFamily(it) }
+                    )
+                }
+            }
+
+            // Size Adjustment Slider
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                SizeAdjustmentSlider(
+                    size = clockSize,
+                    onSizeChanged = { viewModel.setClockSize(it) }
+                )
+            }
+
+            // Animation Style Selector
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Box(modifier = Modifier.padding(16.dp)) {
+                    ClockAnimationSelector(
+                        selectedAnimation = clockAnimation,
+                        onAnimationSelected = { viewModel.setClockAnimation(it) }
+                    )
+                }
+            }
+
+            // Style-specific settings
+            Text(
+                text = "Clock Settings",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+
+            // Only Minimal style controls
+            MinimalControls(viewModel)
+
+            // Add save button
+            Button(
+                onClick = { viewModel.saveSettings() },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+            ) {
+                Text("Save Settings")
             }
         }
     }
@@ -185,50 +294,6 @@ fun MinimalControls(viewModel: ClockStyleEditorViewModel) {
             subtitle = "Display seconds in time",
             checked = showSeconds,
             onCheckedChange = { viewModel.setShowSeconds(it) }
-        )
-    }
-}
-
-@Composable
-fun AnalogControls(viewModel: ClockStyleEditorViewModel) {
-    val showNumbers by viewModel.showAnalogNumbers.collectAsState()
-    val showTicks by viewModel.showAnalogTicks.collectAsState()
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-    ) {
-        SwitchPreference(
-            title = "Show numbers",
-            subtitle = "Display hour numbers",
-            checked = showNumbers,
-            onCheckedChange = { viewModel.setShowAnalogNumbers(it) }
-        )
-
-        SwitchPreference(
-            title = "Show ticks",
-            subtitle = "Display minute ticks",
-            checked = showTicks,
-            onCheckedChange = { viewModel.setShowAnalogTicks(it) }
-        )
-    }
-}
-
-@Composable
-fun WordControls(viewModel: ClockStyleEditorViewModel) {
-    val useCasual by viewModel.useWordCasual.collectAsState()
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-    ) {
-        SwitchPreference(
-            title = "Use casual format",
-            subtitle = "Show time in casual language",
-            checked = useCasual,
-            onCheckedChange = { viewModel.setWordCasual(it) }
         )
     }
 }
@@ -270,4 +335,199 @@ fun SwitchPreference(
             )
         }
     }
-} 
+}
+@Composable
+fun ColorPickerSection(
+    currentColor: Color,
+    onColorSelected: (Color) -> Unit
+) {
+    val colors = listOf(
+        Color.Black, Color.White, Color.Red, Color.Green, Color.Blue,
+        Color.Yellow, Color.Cyan, Color.Magenta, MaterialTheme.colorScheme.primary
+    )
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            "Clock Color",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(vertical = 8.dp)
+        ) {
+            items(colors.size) { index ->
+                val color = colors[index]
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .background(color, shape = CircleShape)
+                        .border(
+                            width = 2.dp,
+                            color = if (currentColor == color) MaterialTheme.colorScheme.primary else Color.Transparent,
+                            shape = CircleShape
+                        )
+                        .clickable { onColorSelected(color) }
+                )
+            }
+
+            item {
+                IconButton(
+                    onClick = { /* Open custom color picker dialog */ },
+                    modifier = Modifier
+                        .size(48.dp)
+                        .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Custom color"
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun FontStyleSelector(
+    selectedFont: String,
+    onFontSelected: (String) -> Unit
+) {
+    val fonts = listOf("Default", "Roboto", "Montserrat", "Lato", "OpenSans", "SourceSansPro")
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            "Font Style",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(vertical = 8.dp)
+        ) {
+            items(fonts.size) { index ->
+                val font = fonts[index]
+                Card(
+                    modifier = Modifier
+                        .height(48.dp)
+                        .clickable { onFontSelected(font) },
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (selectedFont == font)
+                            MaterialTheme.colorScheme.primaryContainer
+                        else
+                            MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Text(
+                            text = font,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SizeAdjustmentSlider(
+    size: Float,
+    onSizeChanged: (Float) -> Unit
+) {
+    Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+        Text(
+            "Clock Size",
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(Icons.Default.Delete, contentDescription = "Smaller")
+
+            Slider(
+                value = size,
+                onValueChange = onSizeChanged,
+                valueRange = 0.5f..2.0f,
+                modifier = Modifier.weight(1f).padding(horizontal = 8.dp)
+            )
+
+            Icon(Icons.Default.Add, contentDescription = "Larger")
+        }
+
+        Text(
+            text = "Preview size: ${(size * 100).toInt()}%",
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.align(Alignment.End)
+        )
+    }
+}
+
+@Composable
+fun ClockAnimationSelector(
+    selectedAnimation: ClockAnimation,
+    onAnimationSelected: (ClockAnimation) -> Unit
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            "Animation Style",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
+        RadioGroup(
+            items = ClockAnimation.values().map { it.displayName },
+            selectedIndex = ClockAnimation.values().indexOf(selectedAnimation),
+            onSelectedChanged = { index ->
+                onAnimationSelected(ClockAnimation.values()[index])
+            }
+        )
+    }
+}
+
+@Composable
+fun RadioGroup(
+    items: List<String>,
+    selectedIndex: Int,
+    onSelectedChanged: (Int) -> Unit
+) {
+    Column {
+        items.forEachIndexed { index, item ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .selectable(
+                        selected = index == selectedIndex,
+                        onClick = { onSelectedChanged(index) }
+                    )
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                RadioButton(
+                    selected = index == selectedIndex,
+                    onClick = null
+                )
+                Text(
+                    text = item,
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.padding(start = 8.dp)
+                )
+            }
+        }
+    }
+}
+
+enum class ClockAnimation(val displayName: String) {
+    NONE("None"),
+    FADE("Fade"),
+    SLIDE("Slide"),
+    BOUNCE("Bounce"),
+    PULSE("Pulse")
+}

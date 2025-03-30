@@ -5,6 +5,7 @@ import android.graphics.Color
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.gson.Gson
 import com.saidim.clockface.background.color.GradientColorSettings
 import com.saidim.clockface.background.model.BackgroundModel
 import com.saidim.clockface.background.unsplash.UnsplashPhotoDto
@@ -50,13 +51,14 @@ class BackgroundSettingsViewModel(application: Application) : AndroidViewModel(a
 
     init {
         viewModelScope.launch {
-            val backgroundModel = appSettings.backgroundModel.first()
+            val backgroundModel = appSettings.backgroundModel.first().also { if (it.isEmpty()) return@launch }
             // Load saved background type and model
+            val gson = Gson()
             _backgroundType.value = appSettings.backgroundType.first().apply {
                 when (this) {
-                    BackgroundType.COLOR -> colorModel = (backgroundModel as BackgroundModel.ColorModel).apply { colorSelected(this) }
-                    BackgroundType.IMAGE -> imageModel = (backgroundModel as BackgroundModel.ImageModel).apply { imageSelected(this) }
-                    BackgroundType.VIDEO -> videoModel = (backgroundModel as BackgroundModel.VideoModel).apply { videoSelected(this) }
+                    BackgroundType.COLOR -> colorModel = (gson.fromJson<BackgroundModel.ColorModel>(backgroundModel, BackgroundModel.ColorModel::class.java)).apply { colorSelected(this) }
+                    BackgroundType.IMAGE -> imageModel = (gson.fromJson<BackgroundModel.ImageModel>(backgroundModel, BackgroundModel.ImageModel::class.java)).apply { imageSelected(this) }
+                    BackgroundType.VIDEO -> videoModel = (gson.fromJson<BackgroundModel.VideoModel>(backgroundModel, BackgroundModel.VideoModel::class.java)).apply { videoSelected(this) }
                 }
             }
         }

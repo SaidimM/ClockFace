@@ -73,13 +73,7 @@ class AppSettings {
     // String preferences
     val backgroundModel = flow {
         val json = getPreference(Keys.BACKGROUND_MODEL, "").first()
-        val type = backgroundType.first()
-        val model = when (type) {
-            BackgroundType.COLOR -> Gson().fromJson(json, BackgroundModel.ColorModel::class.java)
-            BackgroundType.IMAGE -> Gson().fromJson(json, BackgroundModel.ImageModel::class.java)
-            BackgroundType.VIDEO -> Gson().fromJson(json, BackgroundModel.VideoModel::class.java)
-        }
-        emit(model)
+        emit(json)
     }
 
     // Update functions
