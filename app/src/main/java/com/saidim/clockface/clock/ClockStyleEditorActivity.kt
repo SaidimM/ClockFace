@@ -196,7 +196,7 @@ fun ClockStyleEditorScreen(
                                 // Find the display name for the font directory
                                 val fontFamilies = viewModel.getFontFamilies(context)
                                 val fontDisplayName = fontFamilies.find { it.second == currentTypeface }?.first ?: "Roboto"
-                                
+
                                 val fontPath = "fonts/$fontDisplayName/$currentTypeface-$currentStyle.ttf"
                                 try {
                                     val typeface = Typeface.createFromAsset(context.assets, fontPath)
@@ -204,10 +204,10 @@ fun ClockStyleEditorScreen(
                                 } catch (e: Exception) {
                                     // Check available weights
                                     val availableWeights = viewModel.getAvailableWeights(context, fontDisplayName, currentTypeface)
-                                    
+
                                     // Try to use Regular or first available weight as fallback
                                     if (availableWeights.isNotEmpty()) {
-                                        val fallbackStyle = if (availableWeights.contains("Regular")) 
+                                        val fallbackStyle = if (availableWeights.contains("Regular"))
                                             "Regular" else availableWeights.first()
                                         val fallbackPath = "fonts/$fontDisplayName/$currentTypeface-$fallbackStyle.ttf"
                                         try {
@@ -224,7 +224,7 @@ fun ClockStyleEditorScreen(
                                 // Fallback to default typeface
                                 textView.typeface = Typeface.DEFAULT
                             }
-                            
+
                             // Apply animations if needed
                             when (clockAnimation) {
                                 ClockAnimation.FADE -> {
@@ -481,7 +481,7 @@ fun FontStyleSelector(
         try {
             // Get all directories in the fonts folder
             val fontDirs = assetManager.list("fonts") ?: emptyArray()
-            
+
             // Create pairs of display name and ID for each font family
             fontDirs.filter { dir ->
                 // search for .ttf and .otf files in the directory
@@ -496,6 +496,7 @@ fun FontStyleSelector(
                 // Create display name and ID for the font
                 val displayName = dir
                 val fontId = dir.replace(" ", "")
+                LogUtils.d("FontFamily", "Found font family: $displayName")
                 displayName to fontId
             }.sortedBy { it.first } // Sort alphabetically by display name
         } catch (e: Exception) {
@@ -530,8 +531,16 @@ fun FontStyleSelector(
     val availableWeights = remember(currentTypeface) {
         fontStyles.filter { style ->
             try {
-                val fontPath = "fonts/$currentDisplayName/$currentTypeface-$style.ttf"
-                context.assets.open(fontPath).use { it.close(); true }
+                // Try .ttf first, then .otf if that fails
+                val ttfPath = "fonts/$currentDisplayName/$currentTypeface-$style.ttf"
+                val otfPath = "fonts/$currentDisplayName/$currentTypeface-$style.otf"
+
+                try {
+                    context.assets.open(ttfPath).use { it.close(); true }
+                } catch (e: Exception) {
+                    // Try .otf if .ttf fails
+                    context.assets.open(otfPath).use { it.close(); true }
+                }
             } catch (e: Exception) {
                 false
             }
@@ -553,16 +562,16 @@ fun FontStyleSelector(
         ) {
             items(fontFamilies.size) { index ->
                 val (displayName, fontId) = fontFamilies[index]
-                
+
                 Card(
                     modifier = Modifier
                         .height(48.dp)
-                        .clickable { 
+                        .clickable {
                             // When selecting a new font, try to keep the current weight
                             // or fall back to Regular if not available
-                            val newStyle = if (availableWeights.contains(currentStyle)) 
+                            val newStyle = if (availableWeights.contains(currentStyle))
                                 currentStyle else "Regular"
-                            onFontSelected("$fontId-$newStyle") 
+                            onFontSelected("$fontId-$newStyle")
                         },
                     colors = CardDefaults.cardColors(
                         containerColor = if (currentTypeface == fontId)
@@ -634,36 +643,18 @@ fun FontStyleSelector(
                         ),
                         color = MaterialTheme.colorScheme.primary
                     )
-                    
-                    if (availableWeights.size < fontStyles.size) {
-                        Text(
-                            text = " (${availableWeights.size}/${fontStyles.size} weights available)",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
                 }
             }
-            
+
             // Use active weights or all weights with disabled appearance
             val displayedWeights = fontStyles
-            
-            // Slider position calculation based on available weights
-            val effectiveIndex = availableWeights.indexOf(currentStyle).coerceAtLeast(0)
-            var sliderPosition by remember(currentStyle, availableWeights) { 
-                if (availableWeights.isEmpty()) {
-                    mutableStateOf(0f)
-                } else {
-                    mutableStateOf(effectiveIndex.toFloat() / (availableWeights.size - 1).coerceAtLeast(1))
-                }
-            }
-            
+
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
             ) {
-                
+
                 // Visual weight indicator
                 Row(
                     modifier = Modifier
@@ -684,7 +675,7 @@ fun FontStyleSelector(
                             "Black" -> androidx.compose.ui.text.font.FontWeight.Black
                             else -> androidx.compose.ui.text.font.FontWeight.Normal
                         }
-                        
+
                         Text(
                             text = "A",
                             style = MaterialTheme.typography.titleLarge.copy(
