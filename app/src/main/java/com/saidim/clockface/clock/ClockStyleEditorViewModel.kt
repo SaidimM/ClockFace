@@ -17,12 +17,6 @@ import kotlinx.coroutines.launch
 class ClockStyleEditorViewModel(application: Application) : AndroidViewModel(application) {
     private val appSettings = AppSettings.instance
 
-    private val _is24Hour = MutableStateFlow(true)
-    val is24Hour: StateFlow<Boolean> = _is24Hour
-
-    private val _showSeconds = MutableStateFlow(true)
-    val showSeconds: StateFlow<Boolean> = _showSeconds
-
     private val _clockColor = MutableStateFlow(Color.White)
     val clockColor = _clockColor.asStateFlow()
 
@@ -37,23 +31,7 @@ class ClockStyleEditorViewModel(application: Application) : AndroidViewModel(app
 
     init {
         viewModelScope.launch {
-            _is24Hour.value = appSettings.use24Hour.first()
-            _showSeconds.value = appSettings.showSeconds.first()
             // Load other preferences...
-        }
-    }
-
-    fun setTimeFormat(is24Hour: Boolean) {
-        viewModelScope.launch {
-            _is24Hour.value = is24Hour
-            appSettings.update24Hour(is24Hour)
-        }
-    }
-
-    fun setShowSeconds(show: Boolean) {
-        viewModelScope.launch {
-            _showSeconds.value = show
-            appSettings.updateShowSeconds(show)
         }
     }
 
@@ -77,14 +55,6 @@ class ClockStyleEditorViewModel(application: Application) : AndroidViewModel(app
         viewModelScope.launch {
             // Save all settings to datastore or preferences
         }
-    }
-
-    private suspend fun updateMinimalConfig() {
-        val config = ClockStyleConfig.MinimalConfig(
-            is24Hour = _is24Hour.value,
-            showSeconds = _showSeconds.value,
-        )
-        appSettings.updateClockStyleConfig(ClockStyle.MINIMAL, config)
     }
 
     // Get all font families from assets

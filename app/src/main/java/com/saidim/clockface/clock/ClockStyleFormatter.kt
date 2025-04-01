@@ -1,5 +1,6 @@
 package com.saidim.clockface.clock
 
+import ClockStyle
 import java.text.SimpleDateFormat
 import java.util.*
 

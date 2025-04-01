@@ -128,6 +128,7 @@ fun ClockStyleEditorScreen(
     // Reference to the preview TextView for direct updates
     val previewTextRef = remember { mutableStateOf<TextView?>(null) }
 
+    // Update time every second
     LaunchedEffect(Unit) {
         Timer().apply {
             schedule(object : TimerTask() {
@@ -136,6 +137,20 @@ fun ClockStyleEditorScreen(
                 }
             }, 0, 1000)
         }
+    }
+
+    // Calculate the actual size multiplier to use for animated previews
+    var currentSizeMultiplier by remember { mutableStateOf(clockSize) }
+    
+    // Animate size transitions
+    LaunchedEffect(clockSize) {
+        val anim = android.animation.ValueAnimator.ofFloat(currentSizeMultiplier, clockSize).apply {
+            duration = 300
+            addUpdateListener { valueAnimator ->
+                currentSizeMultiplier = valueAnimator.animatedValue as Float
+            }
+        }
+        anim.start()
     }
 
     Scaffold(
@@ -188,7 +203,7 @@ fun ClockStyleEditorScreen(
                             // Update content
                             textView.text = currentTime
                             textView.textAlignment = android.view.View.TEXT_ALIGNMENT_CENTER
-                            textView.textSize = textSize * clockSize
+                            textView.textSize = textSize * currentSizeMultiplier
                             textView.setTextColor(clockColor.toArgb())
 
                             // Apply font family and style
@@ -316,17 +331,6 @@ fun ClockStyleEditorScreen(
                         )
                     }
                 }
-
-                // Style-specific settings
-                Text(
-                    text = "Clock Settings",
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
-
-                // Only Minimal style controls
-                MinimalControls(viewModel)
-
                 // Add save button
                 Button(
                     onClick = { viewModel.saveSettings() },
@@ -341,32 +345,6 @@ fun ClockStyleEditorScreen(
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
-    }
-}
-
-@Composable
-fun MinimalControls(viewModel: ClockStyleEditorViewModel) {
-    val is24Hour by viewModel.is24Hour.collectAsState()
-    val showSeconds by viewModel.showSeconds.collectAsState()
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-    ) {
-        SwitchPreference(
-            title = "24-hour format",
-            subtitle = "Use 24-hour time format",
-            checked = is24Hour,
-            onCheckedChange = { viewModel.setTimeFormat(it) }
-        )
-
-        SwitchPreference(
-            title = "Show seconds",
-            subtitle = "Display seconds in time",
-            checked = showSeconds,
-            onCheckedChange = { viewModel.setShowSeconds(it) }
-        )
     }
 }
 
@@ -668,9 +646,9 @@ fun FontStyleSelector(
                         val isAvailable = availableWeights.contains(style)
                         val isSelected = style == currentStyle
                         val weight = when(style) {
+                            "Thin" -> androidx.compose.ui.text.font.FontWeight.Thin
                             "Light" -> androidx.compose.ui.text.font.FontWeight.Light
                             "Regular" -> androidx.compose.ui.text.font.FontWeight.Normal
-                            "Medium" -> androidx.compose.ui.text.font.FontWeight.Medium
                             "Bold" -> androidx.compose.ui.text.font.FontWeight.Bold
                             "Black" -> androidx.compose.ui.text.font.FontWeight.Black
                             else -> androidx.compose.ui.text.font.FontWeight.Normal
@@ -709,68 +687,118 @@ fun SizeAdjustmentSlider(
     val sizeOptions = listOf(0.5f, 0.75f, 1.0f, 1.5f, 2.0f)
     val sizeLabels = listOf("XS", "S", "M", "L", "XL")
 
-    // Find the closest size option to the current value
-    val currentSizeIndex = remember(size) {
-        val closestIndex = sizeOptions.indexOfFirst { it >= size }
-        if (closestIndex == -1) sizeOptions.size - 1 else closestIndex
+    // Find the closest size option index
+    val sliderPosition = remember(size) {
+        sizeOptions.indexOf(size).coerceAtLeast(0).toFloat()
+    }
+    
+    // Slider state to handle interaction
+    var sliderPositionState by remember(sliderPosition) { 
+        mutableStateOf(sliderPosition) 
     }
 
-    Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-        Text(
-            "Clock Size",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-
-        // Size indicator
-        Text(
-            text = "Size: ${sizeLabels[currentSizeIndex]}",
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(bottom = 4.dp)
-        )
-
-        // Custom discrete slider implementation
+    // Current size preview text
+    val currentSize = sizeOptions[sliderPositionState.toInt()]
+    val currentLabel = sizeLabels[sliderPositionState.toInt()]
+    
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        // Header and current value indicator
         Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            sizeOptions.forEachIndexed { index, option ->
-                val isSelected = size == option
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.clickable { onSizeChanged(option) }
-                ) {
-                    // Size option circle
-                    Box(
-                        modifier = Modifier
-                            .size(24.dp + (index * 6).dp) // Gradually increase size
-                            .background(
-                                color = if (isSelected)
-                                    MaterialTheme.colorScheme.primary
-                                else
-                                    MaterialTheme.colorScheme.surfaceVariant,
-                                shape = CircleShape
-                            )
-                            .border(
-                                width = 2.dp,
-                                color = if (isSelected)
-                                    MaterialTheme.colorScheme.primary
-                                else
-                                    MaterialTheme.colorScheme.outline,
-                                shape = CircleShape
-                            )
-                    )
-
-                    // Size label
-                    Text(
-                        text = sizeLabels[index],
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(top = 4.dp),
-                        color = if (isSelected)
-                            MaterialTheme.colorScheme.primary
-                        else
-                            MaterialTheme.colorScheme.onSurface
-                    )
+            Text(
+                "Clock Size",
+                style = MaterialTheme.typography.titleMedium
+            )
+            
+            // Size value chip
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.padding(start = 8.dp)
+            ) {
+                Text(
+                    text = "$currentLabel (${currentSize}x)",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                )
+            }
+        }
+        
+        // Slider with custom steps
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp)
+        ) {
+            // Material3 Slider
+            Slider(
+                value = sliderPositionState,
+                onValueChange = { newValue ->
+                    sliderPositionState = newValue
+                    // Update size immediately for better feedback
+                    val selectedIndex = newValue.toInt().coerceIn(0, sizeOptions.size - 1)
+                    onSizeChanged(sizeOptions[selectedIndex])
+                },
+                valueRange = 0f..(sizeOptions.size - 1).toFloat(),
+                steps = sizeOptions.size - 2, // steps = items - 1 - 1 (for valuRange)
+                modifier = Modifier.fillMaxWidth()
+            )
+            
+            // Size labels below slider
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                sizeLabels.forEachIndexed { index, label ->
+                    val isSelected = index == sliderPositionState.toInt()
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        // Dot indicator
+                        Box(
+                            modifier = Modifier
+                                .size(if (isSelected) 10.dp else 6.dp)
+                                .background(
+                                    color = if (isSelected)
+                                        MaterialTheme.colorScheme.primary
+                                    else
+                                        MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                                    shape = CircleShape
+                                )
+                        )
+                        
+                        // Size label
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = if (isSelected) 
+                                androidx.compose.ui.text.font.FontWeight.Bold 
+                            else 
+                                androidx.compose.ui.text.font.FontWeight.Normal,
+                            color = if (isSelected)
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                        
+                        // Numeric value
+                        Text(
+                            text = "${sizeOptions[index]}x",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+                    }
                 }
             }
         }
