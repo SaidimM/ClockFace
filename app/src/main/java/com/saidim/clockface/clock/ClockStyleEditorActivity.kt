@@ -114,6 +114,19 @@ fun ClockStyleEditorScreen(
     val clockFontFamily by viewModel.clockFontFamily.collectAsState()
     val clockSize by viewModel.clockSize.collectAsState()
     val clockAnimation by viewModel.clockAnimation.collectAsState()
+    val is24Hour by viewModel.is24Hour.collectAsState()
+    val showSeconds by viewModel.showSeconds.collectAsState()
+
+    // Parse the font family and style
+    val parts = clockFontFamily.split("-")
+    val currentTypeface = parts.getOrNull(0) ?: "Roboto"
+    val currentStyle = parts.getOrNull(1) ?: "Regular"
+
+    // Get the context for asset loading
+    val context = LocalContext.current
+
+    // Reference to the preview TextView for direct updates
+    val previewTextRef = remember { mutableStateOf<TextView?>(null) }
 
     LaunchedEffect(Unit) {
         Timer().apply {
@@ -167,39 +180,65 @@ fun ClockStyleEditorScreen(
                             TextView(context).apply {
                                 gravity = android.view.Gravity.CENTER
                                 transitionName = SHARED_ELEMENT_NAME
+                                previewTextRef.value = this
                             }
                         },
                         modifier = Modifier.fillMaxWidth(),
                         update = { textView ->
+                            // Update content
                             textView.text = currentTime
                             textView.textAlignment = android.view.View.TEXT_ALIGNMENT_CENTER
                             textView.textSize = textSize * clockSize
                             textView.setTextColor(clockColor.toArgb())
 
-                            // Try to apply font family if available
+                            // Apply font family and style
                             try {
-                                if (clockFontFamily != "Default") {
-                                    // Parse typeface and style from the font string
-                                    val parts = clockFontFamily.split("-")
-                                    val typeface = parts.getOrNull(0) ?: "Roboto"
-                                    val style = parts.getOrNull(1) ?: "Regular"
-
-                                    // Convert style name to Typeface constant
-                                    val typefaceStyle = when (style) {
-                                        "Regular" -> Typeface.NORMAL
-                                        "Medium" -> Typeface.NORMAL
-                                        "Semi Bold" -> Typeface.BOLD
-                                        "Bold" -> Typeface.BOLD
-                                        "Extra Bold" -> Typeface.BOLD
-                                        "Black" -> Typeface.BOLD
-                                        else -> Typeface.NORMAL
+                                // Find the display name for the font directory
+                                val fontFamilies = viewModel.getFontFamilies(context)
+                                val fontDisplayName = fontFamilies.find { it.second == currentTypeface }?.first ?: "Roboto"
+                                
+                                val fontPath = "fonts/$fontDisplayName/$currentTypeface-$currentStyle.ttf"
+                                try {
+                                    val typeface = Typeface.createFromAsset(context.assets, fontPath)
+                                    textView.typeface = typeface
+                                } catch (e: Exception) {
+                                    // Check available weights
+                                    val availableWeights = viewModel.getAvailableWeights(context, fontDisplayName, currentTypeface)
+                                    
+                                    // Try to use Regular or first available weight as fallback
+                                    if (availableWeights.isNotEmpty()) {
+                                        val fallbackStyle = if (availableWeights.contains("Regular")) 
+                                            "Regular" else availableWeights.first()
+                                        val fallbackPath = "fonts/$fontDisplayName/$currentTypeface-$fallbackStyle.ttf"
+                                        try {
+                                            val fallbackTypeface = Typeface.createFromAsset(context.assets, fallbackPath)
+                                            textView.typeface = fallbackTypeface
+                                        } catch (e: Exception) {
+                                            textView.typeface = Typeface.DEFAULT
+                                        }
+                                    } else {
+                                        textView.typeface = Typeface.DEFAULT
                                     }
-
-                                    textView.typeface = Typeface.create(typeface, typefaceStyle)
                                 }
-
                             } catch (e: Exception) {
-                                // Fallback to default typeface if the requested one is not available
+                                // Fallback to default typeface
+                                textView.typeface = Typeface.DEFAULT
+                            }
+                            
+                            // Apply animations if needed
+                            when (clockAnimation) {
+                                ClockAnimation.FADE -> {
+                                    textView.alpha = 0f
+                                    textView.animate().alpha(1f).setDuration(500).start()
+                                }
+                                ClockAnimation.PULSE -> {
+                                    textView.scaleX = 0.8f
+                                    textView.scaleY = 0.8f
+                                    textView.animate().scaleX(1f).scaleY(1f).setDuration(300).start()
+                                }
+                                else -> {
+                                    // No animation or other animations
+                                }
                             }
                         }
                     )
@@ -436,22 +475,45 @@ fun FontStyleSelector(
 ) {
     val context = LocalContext.current
 
-    // Font families available in assets/fonts directory with their proper display and ID names
+    // Dynamically load font families from assets
     val fontFamilies = remember {
-        listOf(
-            "Roboto" to "Roboto",
-            "Lato" to "Lato",
-            "Open Sans" to "OpenSans",
-            "Raleway" to "Raleway",
-            "Josefin Sans" to "JosefinSans"
-        )
+        val assetManager = context.assets
+        try {
+            // Get all directories in the fonts folder
+            val fontDirs = assetManager.list("fonts") ?: emptyArray()
+            
+            // Create pairs of display name and ID for each font family
+            fontDirs.filter { dir ->
+                // search for .ttf and .otf files in the directory
+                // to determine if it's a valid font family
+                try {
+                    val fontFiles = assetManager.list("fonts/$dir") ?: emptyArray()
+                    fontFiles.any { it.endsWith(".ttf") || it.endsWith(".otf") }
+                } catch (e: Exception) {
+                    false
+                }
+            }.map { dir ->
+                // Create display name and ID for the font
+                val displayName = dir
+                val fontId = dir.replace(" ", "")
+                displayName to fontId
+            }.sortedBy { it.first } // Sort alphabetically by display name
+        } catch (e: Exception) {
+            // Fallback to default list if there's an error
+            listOf(
+                "Roboto" to "Roboto",
+                "Lato" to "Lato",
+                "Raleway" to "Raleway",
+                "Josefin Sans" to "JosefinSans"
+            )
+        }
     }
 
     // Font weights/styles available
     val fontStyles = listOf(
+        "Thin",
         "Light",
         "Regular",
-        "Medium", 
         "Bold",
         "Black"
     )
@@ -463,6 +525,18 @@ fun FontStyleSelector(
 
     // Find display name for current typeface
     val currentDisplayName = fontFamilies.find { it.second == currentTypeface }?.first ?: "Roboto"
+
+    // Check for available weights for the current font
+    val availableWeights = remember(currentTypeface) {
+        fontStyles.filter { style ->
+            try {
+                val fontPath = "fonts/$currentDisplayName/$currentTypeface-$style.ttf"
+                context.assets.open(fontPath).use { it.close(); true }
+            } catch (e: Exception) {
+                false
+            }
+        }
+    }
 
     Column(modifier = Modifier.fillMaxWidth()) {
         // Typeface selection
@@ -483,7 +557,13 @@ fun FontStyleSelector(
                 Card(
                     modifier = Modifier
                         .height(48.dp)
-                        .clickable { onFontSelected("$fontId-$currentStyle") },
+                        .clickable { 
+                            // When selecting a new font, try to keep the current weight
+                            // or fall back to Regular if not available
+                            val newStyle = if (availableWeights.contains(currentStyle)) 
+                                currentStyle else "Regular"
+                            onFontSelected("$fontId-$newStyle") 
+                        },
                     colors = CardDefaults.cardColors(
                         containerColor = if (currentTypeface == fontId)
                             MaterialTheme.colorScheme.primaryContainer
@@ -536,25 +616,46 @@ fun FontStyleSelector(
                 .fillMaxWidth()
                 .padding(vertical = 8.dp)
         ) {
-            // Current weight indicator
+            // Current weight indicator with count of available weights
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 12.dp, vertical = 4.dp)
             ) {
-                Text(
-                    text = currentStyle,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
-                    ),
+                Row(
                     modifier = Modifier.align(Alignment.Center),
-                    color = MaterialTheme.colorScheme.primary
-                )
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = currentStyle,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                        ),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    
+                    if (availableWeights.size < fontStyles.size) {
+                        Text(
+                            text = " (${availableWeights.size}/${fontStyles.size} weights available)",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
             
-            // Actual slider component
-            var sliderPosition by remember(currentStyle) { 
-                mutableStateOf(fontStyles.indexOf(currentStyle).toFloat() / (fontStyles.size - 1)) 
+            // Use active weights or all weights with disabled appearance
+            val displayedWeights = fontStyles
+            
+            // Slider position calculation based on available weights
+            val effectiveIndex = availableWeights.indexOf(currentStyle).coerceAtLeast(0)
+            var sliderPosition by remember(currentStyle, availableWeights) { 
+                if (availableWeights.isEmpty()) {
+                    mutableStateOf(0f)
+                } else {
+                    mutableStateOf(effectiveIndex.toFloat() / (availableWeights.size - 1).coerceAtLeast(1))
+                }
             }
             
             Column(
@@ -562,57 +663,6 @@ fun FontStyleSelector(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
             ) {
-                // Slider with custom thumb
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp, bottom = 24.dp)
-                ) {
-                    Slider(
-                        value = sliderPosition,
-                        onValueChange = { position ->
-                            sliderPosition = position
-                            // Find the closest font style based on the slider position
-                            val index = (position * (fontStyles.size - 1)).toInt()
-                            val style = fontStyles[index]
-                            if (style != currentStyle) {
-                                onFontSelected("$currentTypeface-$style")
-                            }
-                        },
-                        colors = SliderDefaults.colors(
-                            thumbColor = MaterialTheme.colorScheme.primary,
-                            activeTrackColor = MaterialTheme.colorScheme.primary,
-                            inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant,
-                        ),
-                        steps = fontStyles.size - 2,  // Number of steps between min and max
-                    )
-                    
-                    // Weight indicator dots and labels
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        fontStyles.forEachIndexed { index, style ->
-                            Box(
-                                modifier = Modifier
-                                    .padding(top = 20.dp)  // Position below the slider
-                                    .offset(y = 8.dp),     // Fine-tune vertical position
-                                contentAlignment = Alignment.Center
-                            ) {
-                                // Style label below the tick mark
-                                Text(
-                                    text = style,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontSize = 10.sp,
-                                    color = if (style == currentStyle)
-                                        MaterialTheme.colorScheme.primary
-                                    else
-                                        MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-                }
                 
                 // Visual weight indicator
                 Row(
@@ -623,7 +673,8 @@ fun FontStyleSelector(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     // Visual representation of font weights
-                    fontStyles.forEach { style ->
+                    displayedWeights.forEach { style ->
+                        val isAvailable = availableWeights.contains(style)
                         val isSelected = style == currentStyle
                         val weight = when(style) {
                             "Light" -> androidx.compose.ui.text.font.FontWeight.Light
@@ -639,113 +690,20 @@ fun FontStyleSelector(
                             style = MaterialTheme.typography.titleLarge.copy(
                                 fontWeight = weight
                             ),
-                            color = if (isSelected) 
-                                MaterialTheme.colorScheme.primary 
-                            else 
-                                MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.padding(4.dp)
+                            color = when {
+                                isSelected -> MaterialTheme.colorScheme.primary
+                                isAvailable -> MaterialTheme.colorScheme.onSurface
+                                else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                            },
+                            modifier = Modifier
+                                .padding(4.dp)
+                                .clickable(enabled = isAvailable) {
+                                    if (isAvailable && !isSelected) {
+                                        onFontSelected("$currentTypeface-$style")
+                                    }
+                                }
                         )
                     }
-                }
-            }
-            
-            // Sample text in current weight
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                ),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                ) {
-                    // Sample text with current font weight
-                    AndroidView(
-                        factory = { context ->
-                            TextView(context).apply {
-                                text = "AaBbCcDdEe 12345"
-                                textAlignment = android.view.View.TEXT_ALIGNMENT_CENTER
-                                textSize = 18f
-                            }
-                        },
-                        update = { textView ->
-                            try {
-                                // Find the display name for the font directory
-                                val fontDisplayName = fontFamilies.find { it.second == currentTypeface }?.first ?: "Roboto"
-                                val fontPath = "fonts/$fontDisplayName/$currentTypeface-$currentStyle.ttf"
-                                
-                                try {
-                                    val typeface = Typeface.createFromAsset(context.assets, fontPath)
-                                    textView.typeface = typeface
-                                } catch (e: Exception) {
-                                    textView.typeface = Typeface.DEFAULT
-                                    textView.text = "This weight is not available"
-                                }
-                            } catch (e: Exception) {
-                                textView.typeface = Typeface.DEFAULT
-                            }
-                        }
-                    )
-                }
-            }
-        }
-        
-        // Clock preview
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    "Preview",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = 12.dp)
-                )
-                
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(80.dp)
-                ) {
-                    AndroidView(
-                        factory = { context ->
-                            TextView(context).apply {
-                                text = "12:34"
-                                textAlignment = android.view.View.TEXT_ALIGNMENT_CENTER
-                                textSize = 36f
-                            }
-                        },
-                        update = { textView ->
-                            try {
-                                val fontDisplayName = fontFamilies.find { it.second == currentTypeface }?.first ?: "Roboto"
-                                val fontPath = "fonts/$fontDisplayName/$currentTypeface-$currentStyle.ttf"
-                                
-                                try {
-                                    val typeface = Typeface.createFromAsset(context.assets, fontPath)
-                                    textView.typeface = typeface
-                                } catch (e: Exception) {
-                                    textView.typeface = Typeface.DEFAULT
-                                }
-                            } catch (e: Exception) {
-                                textView.typeface = Typeface.DEFAULT
-                            }
-                        }
-                    )
                 }
             }
         }
@@ -889,4 +847,5 @@ enum class ClockAnimation(val displayName: String) {
     BOUNCE("Bounce"),
     PULSE("Pulse")
 }
+
 

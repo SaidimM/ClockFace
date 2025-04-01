@@ -2,6 +2,7 @@ package com.saidim.clockface.clock
 
 import ClockStyle
 import android.app.Application
+import android.content.Context
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -84,5 +85,47 @@ class ClockStyleEditorViewModel(application: Application) : AndroidViewModel(app
             showSeconds = _showSeconds.value,
         )
         appSettings.updateClockStyleConfig(ClockStyle.MINIMAL, config)
+    }
+
+    // Get all font families from assets
+    fun getFontFamilies(context: Context): List<Pair<String, String>> {
+        return try {
+            val assetManager = context.assets
+            val fontDirs = assetManager.list("fonts") ?: emptyArray()
+            
+            fontDirs.filter { dir ->
+                try {
+                    val fontFiles = assetManager.list("fonts/$dir") ?: emptyArray()
+                    fontFiles.isNotEmpty() && fontFiles.any { it.endsWith(".ttf") }
+                } catch (e: Exception) {
+                    false
+                }
+            }.map { dir ->
+                val displayName = dir
+                val fontId = dir.replace(" ", "")
+                displayName to fontId
+            }.sortedBy { it.first }
+        } catch (e: Exception) {
+            listOf(
+                "Roboto" to "Roboto",
+                "Lato" to "Lato",
+                "Open Sans" to "OpenSans",
+                "Raleway" to "Raleway",
+                "Josefin Sans" to "JosefinSans"
+            )
+        }
+    }
+    
+    // Get available weights for a font
+    fun getAvailableWeights(context: Context, fontDisplayName: String, fontTypeface: String): List<String> {
+        val fontStyles = listOf("Light", "Regular", "Medium", "Bold", "Black")
+        return fontStyles.filter { style ->
+            try {
+                val fontPath = "fonts/$fontDisplayName/$fontTypeface-$style.ttf"
+                context.assets.open(fontPath).use { it.close(); true }
+            } catch (e: Exception) {
+                false
+            }
+        }
     }
 } 
