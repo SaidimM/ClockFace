@@ -39,4 +39,6 @@
     <string name="image_preview">Image preview</string>
     <string name="color_preview">Color preview</string>
     <string name="title_activity_test">TestActivity</string>
+    <string name="save">Save</string>
+    <string name="settings_saved">Background settings saved</string>
 </resources>

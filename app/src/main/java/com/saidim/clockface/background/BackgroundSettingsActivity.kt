@@ -14,6 +14,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import coil.load
+import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayoutMediator
 import com.saidim.clockface.R
 import com.saidim.clockface.background.color.ColorSwatchAdapter
@@ -235,6 +236,9 @@ class BackgroundSettingsActivity : BaseActivity() {
         updatePreviewVisibility(BackgroundType.VIDEO)
         binding.apply {
             video.pixelVideo.getBestVideoFile()?.let { videoFile ->
+                // Update the url property in the VideoModel for persistence
+                video.url = videoFile.link
+                
                 previewVideo.apply {
                     setVideoPath(videoFile.link)
                     setOnPreparedListener { mediaPlayer ->
@@ -273,12 +277,6 @@ class BackgroundSettingsActivity : BaseActivity() {
         binding.previewVideo.apply { if (isPlaying) pause() }
         viewModel.previewGradient.value?.let { gradient ->
             gradient.updateSettings(gradient.settings.copy(isAnimated = false))
-        }
-        // Save current background state
-        when (viewModel.backgroundType.value) {
-            BackgroundType.COLOR -> viewModel.updateBackgroundModel(viewModel.colorModel)
-            BackgroundType.IMAGE -> viewModel.updateBackgroundModel(viewModel.imageModel)
-            BackgroundType.VIDEO -> viewModel.updateBackgroundModel(viewModel.videoModel)
         }
     }
 

@@ -18,6 +18,8 @@ import com.saidim.clockface.clock.syles.ClockStyleConfig
 import com.saidim.clockface.settings.AppSettings
 import kotlinx.coroutines.launch
 import android.graphics.Typeface
+import android.util.Log
+import android.graphics.Color
 
 class ClockDisplayActivity : AppCompatActivity() {
     private val viewModel: ClockViewModel by viewModels()
@@ -93,10 +95,22 @@ class ClockDisplayActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             viewModel.backgroundModel.collect { model ->
-                previewColor.visibility = View.VISIBLE
-                previewImage.visibility = View.GONE
-                previewVideo.visibility = View.GONE
-                previewColor.background = ColorDrawable((model as BackgroundModel.ColorModel).color)
+                if (model is BackgroundModel.ColorModel) {
+                    previewColor.visibility = View.VISIBLE
+                    previewImage.visibility = View.GONE
+                    previewVideo.visibility = View.GONE
+                    
+                    try {
+                        previewColor.background = ColorDrawable(model.color)
+                    } catch (e: Exception) {
+                        Log.e("ClockDisplayActivity", "Error setting color background: ${e.message}")
+                        // Set a default color in case of error
+                        previewColor.background = ColorDrawable(Color.BLACK)
+                    }
+                } else {
+                    // If we received the wrong type of model, log an error
+                    Log.e("ClockDisplayActivity", "Expected ColorModel but got ${model::class.java.simpleName}")
+                }
             }
         }
     }
@@ -107,12 +121,31 @@ class ClockDisplayActivity : AppCompatActivity() {
         val previewVideo = findViewById<VideoView>(R.id.previewVideo)
 
         lifecycleScope.launch {
-            viewModel.backgroundModel.collect { imageUrl ->
-                previewColor.visibility = View.GONE
-                previewImage.visibility = View.VISIBLE
-                previewVideo.visibility = View.GONE
+            viewModel.backgroundModel.collect { model ->
+                if (model is BackgroundModel.ImageModel) {
+                    previewColor.visibility = View.GONE
+                    previewImage.visibility = View.VISIBLE
+                    previewVideo.visibility = View.GONE
 
-                previewImage.load((imageUrl as BackgroundModel.ImageModel).imageUrl) { crossfade(true) }
+                    try {
+                        if (model.imageUrl.isNotEmpty()) {
+                            previewImage.load(model.imageUrl) { 
+                                crossfade(true)
+                                error(ColorDrawable(Color.GRAY))
+                            }
+                        } else {
+                            // If imageUrl is empty, show a placeholder
+                            previewImage.setImageDrawable(ColorDrawable(Color.GRAY))
+                        }
+                    } catch (e: Exception) {
+                        Log.e("ClockDisplayActivity", "Error loading image: ${e.message}")
+                        // Show a placeholder in case of error
+                        previewImage.setImageDrawable(ColorDrawable(Color.GRAY))
+                    }
+                } else {
+                    // If we received the wrong type of model, log an error
+                    Log.e("ClockDisplayActivity", "Expected ImageModel but got ${model::class.java.simpleName}")
+                }
             }
         }
     }
@@ -124,17 +157,37 @@ class ClockDisplayActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             viewModel.backgroundModel.collect { model ->
-                previewColor.visibility = View.GONE
-                previewImage.visibility = View.GONE
-                previewVideo.visibility = View.VISIBLE
+                if (model is BackgroundModel.VideoModel) {
+                    previewColor.visibility = View.GONE
+                    previewImage.visibility = View.GONE
+                    previewVideo.visibility = View.VISIBLE
 
-                previewVideo.apply {
-                    setVideoPath((model as BackgroundModel.VideoModel).url)
-                    setOnPreparedListener { mediaPlayer ->
-                        mediaPlayer.isLooping = true
-                        mediaPlayer.setVolume(0f, 0f)
-                        start()
+                    try {
+                        previewVideo.apply {
+                            setVideoPath(model.url)
+                            setOnPreparedListener { mediaPlayer ->
+                                mediaPlayer.isLooping = true
+                                mediaPlayer.setVolume(0f, 0f)
+                                start()
+                            }
+                            setOnErrorListener { _, what, extra ->
+                                Log.e("ClockDisplayActivity", "Video error: what=$what, extra=$extra")
+                                // Fall back to a solid color background
+                                previewVideo.visibility = View.GONE
+                                previewColor.visibility = View.VISIBLE
+                                true
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e("ClockDisplayActivity", "Error setting up video: ${e.message}")
+                        // Fall back to a solid color background
+                        previewVideo.visibility = View.GONE
+                        previewColor.visibility = View.VISIBLE
                     }
+                } else {
+                    // If we received the wrong type of model, hide the video view
+                    previewVideo.visibility = View.GONE
+                    Log.e("ClockDisplayActivity", "Expected VideoModel but got ${model::class.java.simpleName}")
                 }
             }
         }
