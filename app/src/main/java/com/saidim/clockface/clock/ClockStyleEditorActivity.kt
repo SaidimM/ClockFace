@@ -114,9 +114,7 @@ fun ClockStyleEditorScreen(
     val clockFontFamily by viewModel.clockFontFamily.collectAsState()
     val clockSize by viewModel.clockSize.collectAsState()
     val clockAnimation by viewModel.clockAnimation.collectAsState()
-    val is24Hour by viewModel.is24Hour.collectAsState()
-    val showSeconds by viewModel.showSeconds.collectAsState()
-
+    
     // Parse the font family and style
     val parts = clockFontFamily.split("-")
     val currentTypeface = parts.getOrNull(0) ?: "Roboto"
@@ -333,7 +331,7 @@ fun ClockStyleEditorScreen(
                 }
                 // Add save button
                 Button(
-                    onClick = { viewModel.saveSettings() },
+                    onClick = { viewModel.saveSettings().also { onNavigateBack() } },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
@@ -345,6 +343,25 @@ fun ClockStyleEditorScreen(
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
+    }
+}
+
+@Composable
+fun MinimalControls(viewModel: ClockStyleEditorViewModel) {
+    // While the UI shows these controls for visual consistency,
+    // they won't actually be saved to the settings
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        // No controls are shown per requirements
+        // This is just a placeholder for future reference
+
+        // Note: The settings here were removed as per requirements:
+        // - 24-hour mode
+        // - Show seconds
     }
 }
 

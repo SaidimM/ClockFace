@@ -5,18 +5,11 @@ import android.graphics.Typeface
 
 sealed class ClockStyleConfig {
     data class MinimalConfig(
-        val is24Hour: Boolean = true,
-        val showSeconds: Boolean = true,
         val fontColor: Int = Color.WHITE,
-        val fontSize: FontSize = FontSize.MEDIUM,
-        val typefaceStyle: String = "sans-serif"
-    ) : ClockStyleConfig() {
-        enum class FontSize(val scale: Float) {
-            SMALL(0.75f),
-            MEDIUM(1.0f),
-            LARGE(1.5f)
-        }
-    }
+        val fontSize: Float = 1.0f,
+        val fontFamily: String = "Roboto-Regular",
+        val animation: String = "NONE"
+    ) : ClockStyleConfig()
 
     data class AnalogConfig(
         val showNumbers: Boolean = true,

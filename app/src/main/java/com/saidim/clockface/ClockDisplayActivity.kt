@@ -64,8 +64,7 @@ class ClockDisplayActivity : AppCompatActivity() {
                 if (config is ClockStyleConfig.MinimalConfig) {
                     findViewById<TextView>(R.id.clockText).apply {
                         setTextColor(config.fontColor)
-                        textSize = 32f * config.fontSize.scale
-                        typeface = Typeface.create(config.typefaceStyle, Typeface.NORMAL)
+                        textSize = 32f * config.fontSize
                     }
                 }
             }

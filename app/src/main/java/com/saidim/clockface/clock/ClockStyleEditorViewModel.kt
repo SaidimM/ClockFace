@@ -4,6 +4,7 @@ import ClockStyle
 import android.app.Application
 import android.content.Context
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.saidim.clockface.clock.syles.ClockStyleConfig
@@ -20,7 +21,7 @@ class ClockStyleEditorViewModel(application: Application) : AndroidViewModel(app
     private val _clockColor = MutableStateFlow(Color.White)
     val clockColor = _clockColor.asStateFlow()
 
-    private val _clockFontFamily = MutableStateFlow("Default")
+    private val _clockFontFamily = MutableStateFlow("Roboto-Regular")
     val clockFontFamily = _clockFontFamily.asStateFlow()
 
     private val _clockSize = MutableStateFlow(1.0f)
@@ -29,9 +30,25 @@ class ClockStyleEditorViewModel(application: Application) : AndroidViewModel(app
     private val _clockAnimation = MutableStateFlow(ClockAnimation.NONE)
     val clockAnimation = _clockAnimation.asStateFlow()
 
+    // Dummy properties that will be used by the UI but not saved
+    val is24Hour = MutableStateFlow(false).asStateFlow()
+    val showSeconds = MutableStateFlow(false).asStateFlow()
+
     init {
         viewModelScope.launch {
-            // Load other preferences...
+            // Load existing settings if available
+            appSettings.getClockStyleConfig(ClockStyle.MINIMAL).first().let { config ->
+                if (config is ClockStyleConfig.MinimalConfig) {
+                    _clockColor.value = Color(config.fontColor)
+                    _clockSize.value = config.fontSize
+                    _clockFontFamily.value = config.fontFamily
+                    _clockAnimation.value = try {
+                        ClockAnimation.valueOf(config.animation)
+                    } catch (e: Exception) {
+                        ClockAnimation.NONE
+                    }
+                }
+            }
         }
     }
 
@@ -51,9 +68,22 @@ class ClockStyleEditorViewModel(application: Application) : AndroidViewModel(app
         _clockAnimation.value = animation
     }
 
+    // Dummy methods that won't actually save any settings
+    fun setTimeFormat(use24Hour: Boolean) {}
+    fun setShowSeconds(showSeconds: Boolean) {}
+
     fun saveSettings() {
         viewModelScope.launch {
-            // Save all settings to datastore or preferences
+            // Create MinimalConfig with current settings
+            val minimalConfig = ClockStyleConfig.MinimalConfig(
+                fontColor = clockColor.value.toArgb(),
+                fontSize = clockSize.value,
+                fontFamily = clockFontFamily.value,
+                animation = clockAnimation.value.name
+            )
+
+            // Save the config to AppSettings
+            appSettings.updateClockStyleConfig(ClockStyle.MINIMAL, minimalConfig)
         }
     }
 
