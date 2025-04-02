@@ -89,8 +89,8 @@ class BackgroundSettingsViewModel(application: Application) : AndroidViewModel(a
         viewModelScope.launch {
             colorModel.color = color
             updateColorBackground()
-            colorSelected(colorModel)
             updateBackgroundModel(colorModel)
+            colorSelected(colorModel)
         }
     }
 

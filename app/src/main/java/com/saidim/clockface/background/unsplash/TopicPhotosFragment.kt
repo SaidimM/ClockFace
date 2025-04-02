@@ -32,7 +32,17 @@ class TopicPhotosFragment(private val topic: String) : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         setupRecyclerView()
         observeSearchResults()
-        lifecycleScope.launch { viewModel.searchPhotosByTopic(topic).collect { photoAdapter.submitList(it) } }
+        
+        // Show loading indicator before API call
+        binding.imageGridLoadingIndicator?.visibility = View.VISIBLE
+        
+        lifecycleScope.launch { 
+            viewModel.searchPhotosByTopic(topic).collect { results -> 
+                photoAdapter.submitList(results) 
+                // Hide loading indicator once results are available
+                binding.imageGridLoadingIndicator?.visibility = View.GONE
+            } 
+        }
     }
 
     private fun setupRecyclerView() {
@@ -51,6 +61,8 @@ class TopicPhotosFragment(private val topic: String) : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.searchResults.collect { photos ->
                 photoAdapter.submitList(photos)
+                // Hide loading indicator when search results are updated
+                binding.imageGridLoadingIndicator?.visibility = View.GONE
             }
         }
     }

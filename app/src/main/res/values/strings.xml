@@ -41,4 +41,5 @@
     <string name="title_activity_test">TestActivity</string>
     <string name="save">Save</string>
     <string name="settings_saved">Background settings saved</string>
+    <string name="searching_videos">Searching for videos...</string>
 </resources>

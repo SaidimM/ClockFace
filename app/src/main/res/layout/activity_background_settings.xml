@@ -40,6 +40,24 @@
                         android:layout_height="match_parent"
                         android:layout_gravity="center"
                         android:visibility="gone"/>
+                
+                <!-- Loading indicator for images -->
+                <ProgressBar
+                        android:id="@+id/imageLoadingIndicator"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_gravity="center"
+                        android:visibility="gone"
+                        android:indeterminateTint="?attr/colorPrimary"/>
+                
+                <!-- Loading indicator for videos -->
+                <ProgressBar
+                        android:id="@+id/videoLoadingIndicator"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_gravity="center"
+                        android:visibility="gone"
+                        android:indeterminateTint="?attr/colorPrimary"/>
 
             </FrameLayout>
 
@@ -141,6 +159,7 @@
                             android:id="@+id/colorRecyclerView"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:orientation="horizontal"
                             android:layout_marginTop="8dp"
                             android:clipToPadding="false"
                             android:paddingHorizontal="4dp"/>
@@ -225,28 +244,33 @@
                             android:hint="@string/video_source_title"
                             android:padding="16dp"
                             android:drawablePadding="8dp"/>
-
-                    <androidx.recyclerview.widget.RecyclerView
-                            android:id="@+id/videoRecyclerView"
-                            app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+                            
+                    <!-- Loading indicator for video search -->
+                    <FrameLayout
                             android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="16dp"
-                            android:clipToPadding="false"/>
+                            android:layout_height="wrap_content">
+                            
+                        <ProgressBar
+                                android:id="@+id/videoGridLoadingIndicator"
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                android:layout_gravity="center"
+                                android:layout_margin="8dp"
+                                android:visibility="gone"
+                                android:indeterminateTint="?attr/colorPrimary"/>
+                                
+                        <androidx.recyclerview.widget.RecyclerView
+                                android:id="@+id/videoRecyclerView"
+                                app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="16dp"
+                                android:clipToPadding="false"/>
+                    </FrameLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <!-- Save Button (FAB) -->
-    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-            android:id="@+id/saveFab"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom|end"
-            android:layout_margin="16dp"
-            android:text="@string/save"
-            app:icon="@drawable/ic_save"
-            app:iconTint="?attr/colorOnPrimary"
-            android:textColor="?attr/colorOnPrimary"/>
+    <!-- Save Button (FAB) - Removed for automatic saving experience -->
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

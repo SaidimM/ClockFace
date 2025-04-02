@@ -38,8 +38,19 @@ class UnsplashImageAdapter(
 
         fun bind(photo: UnsplashPhotoDto) {
             binding.apply {
+                // Show a loading indicator while the image loads
+                image.alpha = 0.3f
+                
                 // Load the image using Coil
-                image.load(photo.urls.small) { crossfade(true) }
+                image.load(photo.urls.small) { 
+                    crossfade(true)
+                    listener(
+                        onSuccess = { _, _ ->
+                            // Fade in the image when loaded
+                            image.animate().alpha(1.0f).setDuration(300).start()
+                        }
+                    )
+                }
                 // Set photographer name
                 photographerName.text = photo.user.name
             }

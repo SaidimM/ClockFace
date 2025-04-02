@@ -39,7 +39,6 @@ class BackgroundSettingsActivity : BaseActivity() {
         setupImageSourceControls()
         setupVideoControls()
         setupColorControls()
-        setupSaveButton()
         observeViewModel()
         observePreview()
         restoreBackgroundState()
@@ -47,24 +46,6 @@ class BackgroundSettingsActivity : BaseActivity() {
 
     private fun setupToolbar() {
         binding.topAppBar.setNavigationOnClickListener { finish() }
-    }
-
-    private fun setupSaveButton() {
-        binding.saveFab.setOnClickListener {
-            // Save current background state based on the selected type
-            when (viewModel.backgroundType.value) {
-                BackgroundType.COLOR -> viewModel.updateBackgroundModel(viewModel.colorModel)
-                BackgroundType.IMAGE -> viewModel.updateBackgroundModel(viewModel.imageModel)
-                BackgroundType.VIDEO -> viewModel.updateBackgroundModel(viewModel.videoModel)
-            }
-            
-            // Show success message
-            Snackbar.make(
-                binding.root,
-                getString(R.string.settings_saved),
-                Snackbar.LENGTH_SHORT
-            ).show()
-        }
     }
 
     private fun setupBackgroundTypeSelection() {
@@ -99,6 +80,7 @@ class BackgroundSettingsActivity : BaseActivity() {
             gradientSwitch.isChecked = viewModel.colorModel.enableFluidColor
             gradientSwitch.setOnCheckedChangeListener { _, isChecked ->
                 viewModel.colorModel.enableFluidColor = isChecked
+                viewModel.updateBackgroundModel(viewModel.colorModel)
             }
 
             // Submit default colors
@@ -151,7 +133,9 @@ class BackgroundSettingsActivity : BaseActivity() {
     private fun setupVideoControls() {
         binding.videoRecyclerView.apply {
             layoutManager = GridLayoutManager(this@BackgroundSettingsActivity, 2)
-            adapter = VideoAdapter { video -> viewModel.selectVideo(video) }
+            adapter = VideoAdapter { video -> 
+                viewModel.selectVideo(video)
+            }
         }
 
         // Handle both Enter key and IME action
@@ -190,6 +174,10 @@ class BackgroundSettingsActivity : BaseActivity() {
     private fun handleVideoSearch(query: String) {
         binding.videoSourceEdit.clearFocus()
         hideKeyboard(binding.videoSourceEdit)
+        
+        // Show loading indicator for video grid
+        binding.videoGridLoadingIndicator.visibility = View.VISIBLE
+        
         viewModel.loadPexelsVideos(query)
     }
 
@@ -202,6 +190,8 @@ class BackgroundSettingsActivity : BaseActivity() {
         lifecycleScope.launch {
             viewModel.videos.collect { videos ->
                 LogUtils.d(videos.toString())
+                // Hide loading indicator when videos are loaded
+                binding.videoGridLoadingIndicator.visibility = View.GONE
                 (binding.videoRecyclerView.adapter as? VideoAdapter)?.submitList(videos)
             }
         }
@@ -247,13 +237,35 @@ class BackgroundSettingsActivity : BaseActivity() {
     private fun showImagePreview(image: BackgroundModel.ImageModel) {
         updatePreviewVisibility(BackgroundType.IMAGE)
         binding.apply {
-            previewImage.load(image.imageUrl) { crossfade(true) }
+            // Show loading indicator
+            imageLoadingIndicator.visibility = View.VISIBLE
+            previewImage.visibility = View.INVISIBLE // Hide image until loaded
+            
+            previewImage.load(image.imageUrl) { 
+                crossfade(true)
+                listener(
+                    onSuccess = { _, _ ->
+                        // Hide loading indicator when image loads
+                        imageLoadingIndicator.visibility = View.GONE
+                        previewImage.visibility = View.VISIBLE
+                    },
+                    onError = { _, _ ->
+                        // Hide loading indicator on error
+                        imageLoadingIndicator.visibility = View.GONE
+                        previewImage.visibility = View.VISIBLE
+                    }
+                )
+            }
         }
     }
 
     private fun showVideoPreview(video: BackgroundModel.VideoModel) {
         updatePreviewVisibility(BackgroundType.VIDEO)
         binding.apply {
+            // Show loading indicator
+            videoLoadingIndicator.visibility = View.VISIBLE
+            previewVideo.visibility = View.INVISIBLE // Hide video until loaded
+            
             video.pixelVideo.getBestVideoFile()?.let { videoFile ->
                 // Update the url property in the VideoModel for persistence
                 video.url = videoFile.link
@@ -261,17 +273,27 @@ class BackgroundSettingsActivity : BaseActivity() {
                 previewVideo.apply {
                     setVideoPath(videoFile.link)
                     setOnPreparedListener { mediaPlayer ->
+                        // Hide loading indicator when video is prepared
+                        videoLoadingIndicator.visibility = View.GONE
+                        previewVideo.visibility = View.VISIBLE
+                        
                         mediaPlayer.isLooping = true
                         mediaPlayer.setVolume(0f, 0f) // Mute the video
                         start()
                     }
                     setOnErrorListener { _, what, extra ->
                         Log.e("VideoPreview", "Error playing video: what=$what, extra=$extra")
+                        // Hide loading indicator on error
+                        videoLoadingIndicator.visibility = View.GONE
                         showPlaceholder()
                         true
                     }
                 }
-            } ?: showPlaceholder()
+            } ?: run {
+                // Hide loading indicator if no video file
+                videoLoadingIndicator.visibility = View.GONE
+                showPlaceholder() 
+            }
         }
     }
 
@@ -297,12 +319,9 @@ class BackgroundSettingsActivity : BaseActivity() {
         viewModel.previewGradient.value?.let { gradient ->
             gradient.updateSettings(gradient.settings.copy(isAnimated = false))
         }
-        // Save current background state
-        when (viewModel.backgroundType.value) {
-            BackgroundType.COLOR -> viewModel.updateBackgroundModel(viewModel.colorModel)
-            BackgroundType.IMAGE -> viewModel.updateBackgroundModel(viewModel.imageModel)
-            BackgroundType.VIDEO -> viewModel.updateBackgroundModel(viewModel.videoModel)
-        }
+        
+        // Note: We no longer need to save settings here because they're saved immediately when changed
+        // This maintains compatibility with existing code and ensures any final state is captured
     }
 
     override fun onResume() {
