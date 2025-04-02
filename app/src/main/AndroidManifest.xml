@@ -43,6 +43,11 @@
             android:exported="false"
             android:label="Background Settings" />
         <activity
+            android:name=".background.BackgroundSettingsComposeActivity"
+            android:exported="false"
+            android:label="Background Settings"
+            android:theme="@style/Theme.Material3.DayNight.NoActionBar" />
+        <activity
             android:name=".clock.ClockStylesActivity"
             android:exported="false"
             android:label="Clock Styles"
