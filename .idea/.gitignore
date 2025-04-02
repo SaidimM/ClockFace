@@ -11,3 +11,4 @@ migrations.xml
 gradle.xml
 /caches/deviceStreaming.xml
 /inspectionProfiles/Project_Default.xml
+/modules/app/Clock_face.app.iml
