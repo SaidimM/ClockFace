@@ -68,12 +68,6 @@ class BackgroundSettingsViewModel(application: Application) : AndroidViewModel(a
         viewModelScope.launch {
             _backgroundType.value = type
             appSettings.updateBackgroundType(type.ordinal)
-            // Save the current model for the selected type
-            when (type) {
-                BackgroundType.COLOR -> appSettings.updateBackgroundModel(colorModel)
-                BackgroundType.IMAGE -> appSettings.updateBackgroundModel(imageModel)
-                BackgroundType.VIDEO -> appSettings.updateBackgroundModel(videoModel)
-            }
         }
     }
 
@@ -96,20 +90,14 @@ class BackgroundSettingsViewModel(application: Application) : AndroidViewModel(a
             colorModel.color = color
             updateColorBackground()
             colorSelected(colorModel)
-            // Update background type and save immediately
-            _backgroundType.value = BackgroundType.COLOR
-            appSettings.updateBackgroundType(BackgroundType.COLOR.ordinal)
-            appSettings.updateBackgroundModel(colorModel)
+            updateBackgroundModel(colorModel)
         }
     }
 
     fun selectImage(newImage: BackgroundModel.ImageModel) {
         viewModelScope.launch {
             imageModel.imageUrl = newImage.imageUrl
-            // Update background type and save immediately
-            _backgroundType.value = BackgroundType.IMAGE
-            appSettings.updateBackgroundType(BackgroundType.IMAGE.ordinal)
-            appSettings.updateBackgroundModel(imageModel)
+            updateBackgroundModel(imageModel)
             imageSelected(imageModel)
         }
     }
@@ -121,10 +109,7 @@ class BackgroundSettingsViewModel(application: Application) : AndroidViewModel(a
             video.getBestVideoFile()?.let { videoFile ->
                 videoModel.url = videoFile.link
             }
-            // Update background type and save immediately
-            _backgroundType.value = BackgroundType.VIDEO
-            appSettings.updateBackgroundType(BackgroundType.VIDEO.ordinal)
-            appSettings.updateBackgroundModel(videoModel)
+            updateBackgroundModel(videoModel)
             videoSelected(videoModel)
         }
     }
@@ -159,5 +144,14 @@ class BackgroundSettingsViewModel(application: Application) : AndroidViewModel(a
             )
         }
         updateGradientSettings(settings)
+    }
+
+    fun updateBackgroundModel(model: BackgroundModel) {
+        val type = if (model is BackgroundModel.ColorModel) BackgroundType.COLOR
+        else if (model is BackgroundModel.ImageModel) BackgroundType.IMAGE else BackgroundType.VIDEO
+        viewModelScope.launch {
+            appSettings.updateBackgroundType(type.ordinal)
+            appSettings.updateBackgroundModel(model)
+        }
     }
 } 

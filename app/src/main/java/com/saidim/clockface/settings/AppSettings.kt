@@ -54,33 +54,31 @@ class AppSettings {
         val type = backgroundType.first()
         val gson = Gson()
         
-        if (json.isEmpty()) {
+        val model = if (json.isEmpty()) {
             // Return default model based on type
-            val model = when (type) {
+            when (type) {
                 BackgroundType.COLOR -> BackgroundModel.ColorModel()
                 BackgroundType.IMAGE -> BackgroundModel.ImageModel()
                 BackgroundType.VIDEO -> BackgroundModel.VideoModel()
             }
-            emit(model)
         } else {
             try {
                 // Deserialize to the correct model type
-                val model = when (type) {
+                when (type) {
                     BackgroundType.COLOR -> gson.fromJson(json, BackgroundModel.ColorModel::class.java)
                     BackgroundType.IMAGE -> gson.fromJson(json, BackgroundModel.ImageModel::class.java)
                     BackgroundType.VIDEO -> gson.fromJson(json, BackgroundModel.VideoModel::class.java)
                 }
-                emit(model)
             } catch (e: Exception) {
                 // If deserialization fails, return a default model
-                val model = when (type) {
+                when (type) {
                     BackgroundType.COLOR -> BackgroundModel.ColorModel()
                     BackgroundType.IMAGE -> BackgroundModel.ImageModel()
                     BackgroundType.VIDEO -> BackgroundModel.VideoModel()
                 }
-                emit(model)
             }
         }
+        emit(model)
     }
 
     // Update functions

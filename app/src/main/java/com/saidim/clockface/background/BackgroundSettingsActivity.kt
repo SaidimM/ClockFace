@@ -39,6 +39,7 @@ class BackgroundSettingsActivity : BaseActivity() {
         setupImageSourceControls()
         setupVideoControls()
         setupColorControls()
+        setupSaveButton()
         observeViewModel()
         observePreview()
         restoreBackgroundState()
@@ -46,6 +47,24 @@ class BackgroundSettingsActivity : BaseActivity() {
 
     private fun setupToolbar() {
         binding.topAppBar.setNavigationOnClickListener { finish() }
+    }
+
+    private fun setupSaveButton() {
+        binding.saveFab.setOnClickListener {
+            // Save current background state based on the selected type
+            when (viewModel.backgroundType.value) {
+                BackgroundType.COLOR -> viewModel.updateBackgroundModel(viewModel.colorModel)
+                BackgroundType.IMAGE -> viewModel.updateBackgroundModel(viewModel.imageModel)
+                BackgroundType.VIDEO -> viewModel.updateBackgroundModel(viewModel.videoModel)
+            }
+            
+            // Show success message
+            Snackbar.make(
+                binding.root,
+                getString(R.string.settings_saved),
+                Snackbar.LENGTH_SHORT
+            ).show()
+        }
     }
 
     private fun setupBackgroundTypeSelection() {
@@ -277,6 +296,12 @@ class BackgroundSettingsActivity : BaseActivity() {
         binding.previewVideo.apply { if (isPlaying) pause() }
         viewModel.previewGradient.value?.let { gradient ->
             gradient.updateSettings(gradient.settings.copy(isAnimated = false))
+        }
+        // Save current background state
+        when (viewModel.backgroundType.value) {
+            BackgroundType.COLOR -> viewModel.updateBackgroundModel(viewModel.colorModel)
+            BackgroundType.IMAGE -> viewModel.updateBackgroundModel(viewModel.imageModel)
+            BackgroundType.VIDEO -> viewModel.updateBackgroundModel(viewModel.videoModel)
         }
     }
 
