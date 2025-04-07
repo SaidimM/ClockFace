@@ -3,12 +3,10 @@ package com.saidim.clockface
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityOptionsCompat
-import com.google.android.material.button.MaterialButton
 import com.saidim.clockface.background.ComposeBackgroundSettingsActivity
-import com.saidim.clockface.clock.ClockStylesActivity
 import com.saidim.clockface.base.BaseActivity
+import com.saidim.clockface.clock.ClockStylesActivity
 import com.saidim.clockface.clock.ColorPickerActivity
 import com.saidim.clockface.databinding.ActivityMainBinding
 
@@ -47,13 +45,13 @@ class MainActivity : BaseActivity() {
             putExtra(EXTRA_IS_24_HOUR, viewModel.is24Hour.value)
             putExtra(EXTRA_SHOW_SECONDS, viewModel.showSeconds.value)
         }
-        
+
         val options = ActivityOptionsCompat.makeSceneTransitionAnimation(
             this,
             binding.startButton,
             getString(R.string.clock_preview_transition)
         )
-        
+
         startActivity(intent, options.toBundle())
     }
 

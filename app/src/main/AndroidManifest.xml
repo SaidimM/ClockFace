@@ -39,10 +39,6 @@
             android:screenOrientation="fullSensor"
             android:theme="@style/Theme.ClockFace.Fullscreen" />
         <activity
-            android:name=".background.BackgroundSettingsActivity"
-            android:exported="false"
-            android:label="Background Settings" />
-        <activity
             android:name=".background.ComposeBackgroundSettingsActivity"
             android:exported="false"
             android:label="Background Settings"

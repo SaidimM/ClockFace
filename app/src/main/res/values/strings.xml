@@ -42,4 +42,13 @@
     <string name="save">Save</string>
     <string name="settings_saved">Background settings saved</string>
     <string name="searching_videos">Searching for videos...</string>
+
+    <string name="cd_back">Back</string>
+    <string name="cd_background_image_preview">Background image preview</string>
+    <string name="no_video_selected">No video selected</string>
+    <string name="no_images_found">No images found for %s</string>
+    <string name="loading_topic">Loading %s…</string>
+    <string name="cd_unsplash_image">Unsplash image</string>
+    <string name="no_videos_found">No videos found for \"%s\"</string>
+    <string name="cd_video_thumbnail">Video thumbnail</string>
 </resources>

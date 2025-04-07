@@ -1,357 +1,661 @@
 package com.saidim.clockface.background
 
 import LogUtils
-import android.content.Context
+import android.net.Uri
 import android.os.Bundle
-import android.util.Log
-import android.view.KeyEvent
-import android.view.View
-import android.view.inputmethod.EditorInfo
-import android.view.inputmethod.InputMethodManager
+import android.view.WindowManager
+import android.widget.VideoView
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.core.view.isVisible
-import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.LinearLayoutManager
-import coil.load
-import com.google.android.material.tabs.TabLayoutMediator
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.*
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
+import coil.request.ImageRequest
 import com.saidim.clockface.R
-import com.saidim.clockface.background.color.ColorSwatchAdapter
 import com.saidim.clockface.background.model.BackgroundModel
-import com.saidim.clockface.background.unsplash.TopicPagerAdapter
+import com.saidim.clockface.background.unsplash.UnsplashPhotoDto
 import com.saidim.clockface.background.unsplash.UnsplashTopics
-import com.saidim.clockface.background.video.VideoAdapter
-import com.saidim.clockface.base.BaseActivity
-import com.saidim.clockface.databinding.ActivityBackgroundSettingsBinding
+import com.saidim.clockface.background.video.PexelsVideo
+import com.saidim.clockface.ui.theme.ClockFaceTheme
 import kotlinx.coroutines.launch
 
-class BackgroundSettingsActivity : BaseActivity() {
-    private val binding by lazy { ActivityBackgroundSettingsBinding.inflate(layoutInflater) }
+// --- Activity --- //
+@OptIn(ExperimentalFoundationApi::class)
+class ComposeBackgroundSettingsActivity : ComponentActivity() {
     private val viewModel: BackgroundSettingsViewModel by viewModels()
-    private var topicPagerAdapter: TopicPagerAdapter? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(binding.root)
-        setupToolbar()
-        setupBackgroundTypeSelection()
-        setupImageSourceControls()
-        setupVideoControls()
-        setupColorControls()
-        observeViewModel()
-        observePreview()
-        restoreBackgroundState()
-    }
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-    private fun setupToolbar() {
-        binding.topAppBar.setNavigationOnClickListener { finish() }
-    }
-
-    private fun setupBackgroundTypeSelection() {
-        binding.backgroundTypeSegmentedButton.addOnButtonCheckedListener { _, checkedId, isChecked ->
-            if (isChecked) {
-                val type = when (checkedId) {
-                    R.id.noneButton -> BackgroundType.COLOR
-                    R.id.imageButton -> BackgroundType.IMAGE
-                    R.id.videoButton -> BackgroundType.VIDEO
-                    else -> BackgroundType.COLOR
-                }
-                viewModel.setBackgroundType(type)
-            }
-        }
-    }
-
-    private fun setupColorControls() {
-        binding.apply {
-            // Setup color recycler view
-            colorRecyclerView.apply {
-                layoutManager = LinearLayoutManager(
-                    this@BackgroundSettingsActivity,
-                    LinearLayoutManager.HORIZONTAL,
-                    false
-                )
-                adapter = ColorSwatchAdapter { color ->
-                    viewModel.selectColor(color)
-                }
-            }
-
-            // Setup gradient toggle
-            gradientSwitch.isChecked = viewModel.colorModel.enableFluidColor
-            gradientSwitch.setOnCheckedChangeListener { _, isChecked ->
-                viewModel.colorModel.enableFluidColor = isChecked
-                viewModel.updateBackgroundModel(viewModel.colorModel)
-            }
-
-            // Submit default colors
-            (colorRecyclerView.adapter as? ColorSwatchAdapter)?.submitList(
-                listOf(
-                    0xFFE57373.toInt(), // Red
-                    0xFF81C784.toInt(), // Green
-                    0xFF64B5F6.toInt(), // Blue
-                    0xFFFFB74D.toInt(), // Orange
-                    0xFF9575CD.toInt(), // Purple
-                    0xFF4DB6AC.toInt(), // Teal
-                    0xFFF06292.toInt(), // Pink
-                    0xFFFFD54F.toInt()  // Yellow
-                )
-            )
-
-            // Initially hide gradient controls
-            gradientControls.visibility = View.GONE
-            gradientControls.alpha = 0f
-        }
-    }
-
-    private fun setupImageSourceControls() {
-        // Clear existing tabs
-        binding.tabLayout.removeAllTabs()
-        // Add tabs for each topic
-        UnsplashTopics.topics.forEach { topic ->
-            binding.tabLayout.addTab(binding.tabLayout.newTab().apply { text = topic })
-        }
-
-        // Setup ViewPager
-        topicPagerAdapter = TopicPagerAdapter(
-            topics = UnsplashTopics.topics,
-            fragmentActivity = this
-        )
-
-        binding.viewPager.apply {
-            adapter = topicPagerAdapter
-            offscreenPageLimit = 2  // Cache 2 pages on each side
-            isUserInputEnabled = true // Enable swiping between topics
-            isNestedScrollingEnabled = true // Enable nested scrolling
-        }
-
-        // Connect TabLayout with ViewPager using TabLayoutMediator
-        TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, position ->
-            tab.text = UnsplashTopics.topics[position]
-        }.attach()
-    }
-
-    private fun setupVideoControls() {
-        binding.videoRecyclerView.apply {
-            layoutManager = GridLayoutManager(this@BackgroundSettingsActivity, 2)
-            adapter = VideoAdapter { video -> 
-                viewModel.selectVideo(video)
-            }
-        }
-
-        // Handle both Enter key and IME action
-        binding.videoSourceEdit.apply {
-            setOnEditorActionListener { textView, actionId, event ->
-                when {
-                    // Handle IME_ACTION_SEARCH or IME_ACTION_DONE
-                    actionId == EditorInfo.IME_ACTION_SEARCH ||
-                            actionId == EditorInfo.IME_ACTION_DONE -> {
-                        LogUtils.d("EditorInfo.IME_ACTION_SEARCH pressed")
-                        handleVideoSearch(textView.text.toString())
-                        true
-                    }
-                    // Handle Enter key press
-                    event?.keyCode == KeyEvent.KEYCODE_ENTER &&
-                            event.action == KeyEvent.ACTION_DOWN -> {
-                        LogUtils.d("KeyEvent.KEYCODE_ENTER pressed")
-                        handleVideoSearch(textView.text.toString())
-                        true
-                    }
-
-                    else -> false
-                }
-            }
-
-            // Set IME options to show search action
-            imeOptions = EditorInfo.IME_ACTION_SEARCH
-        }
-
-        // Load popular videos by default when video type is selected
-        if (!viewModel.hasLoadedVideos) {
-            viewModel.loadPexelsVideos("popular")
-        }
-    }
-
-    private fun handleVideoSearch(query: String) {
-        binding.videoSourceEdit.clearFocus()
-        hideKeyboard(binding.videoSourceEdit)
-        
-        // Show loading indicator for video grid
-        binding.videoGridLoadingIndicator.visibility = View.VISIBLE
-        
-        viewModel.loadPexelsVideos(query)
-    }
-
-    private fun hideKeyboard(view: View) {
-        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        imm.hideSoftInputFromWindow(view.windowToken, 0)
-    }
-
-    private fun observeViewModel() {
-        lifecycleScope.launch {
-            viewModel.videos.collect { videos ->
-                LogUtils.d(videos.toString())
-                // Hide loading indicator when videos are loaded
-                binding.videoGridLoadingIndicator.visibility = View.GONE
-                (binding.videoRecyclerView.adapter as? VideoAdapter)?.submitList(videos)
-            }
-        }
-    }
-
-    private fun updateEditorVisibility(type: BackgroundType) {
-        binding.apply {
-            imageSourceCard.isVisible = type == BackgroundType.IMAGE
-            videoSourceCard.isVisible = type == BackgroundType.VIDEO
-            colorSourceCard.isVisible = type == BackgroundType.COLOR
-        }
-    }
-
-    private fun updatePreviewVisibility(type: BackgroundType) {
-        binding.apply {
-            previewColor.isVisible = type == BackgroundType.COLOR
-            previewImage.isVisible = type == BackgroundType.IMAGE
-            previewVideo.isVisible = type == BackgroundType.VIDEO
-        }
-    }
-
-    private fun observePreview() {
-        viewModel.colorSelected = { showColorPreview(it) }
-        viewModel.imageSelected = { showImagePreview(it) }
-        viewModel.videoSelected = { showVideoPreview(it) }
-        lifecycleScope.launch {
-            viewModel.backgroundType.collect { type ->
-                updateEditorVisibility(type)
-                if (type == BackgroundType.COLOR) {
-                    setupColorPreview()
-                }
-            }
-        }
-    }
-
-    private fun showColorPreview(colorModel: BackgroundModel.ColorModel) {
-        updatePreviewVisibility(BackgroundType.COLOR)
-        binding.apply {
-            previewColor.background = colorModel.getDrawable()
-        }
-    }
-
-    private fun showImagePreview(image: BackgroundModel.ImageModel) {
-        updatePreviewVisibility(BackgroundType.IMAGE)
-        binding.apply {
-            // Show loading indicator
-            imageLoadingIndicator.visibility = View.VISIBLE
-            previewImage.visibility = View.INVISIBLE // Hide image until loaded
-            
-            previewImage.load(image.imageUrl) { 
-                crossfade(true)
-                listener(
-                    onSuccess = { _, _ ->
-                        // Hide loading indicator when image loads
-                        imageLoadingIndicator.visibility = View.GONE
-                        previewImage.visibility = View.VISIBLE
-                    },
-                    onError = { _, _ ->
-                        // Hide loading indicator on error
-                        imageLoadingIndicator.visibility = View.GONE
-                        previewImage.visibility = View.VISIBLE
-                    }
+        setContent {
+            ClockFaceTheme {
+                // Collect state and pass it down with the event handler
+                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                BackgroundSettingsScreen(
+                    uiState = uiState,
+                    onEvent = viewModel::handleEvent,
+                    onNavigateBack = { finish() }
                 )
             }
         }
     }
-
-    private fun showVideoPreview(video: BackgroundModel.VideoModel) {
-        updatePreviewVisibility(BackgroundType.VIDEO)
-        binding.apply {
-            // Show loading indicator
-            videoLoadingIndicator.visibility = View.VISIBLE
-            previewVideo.visibility = View.INVISIBLE // Hide video until loaded
-            
-            video.pixelVideo.getBestVideoFile()?.let { videoFile ->
-                // Update the url property in the VideoModel for persistence
-                video.url = videoFile.link
-                
-                previewVideo.apply {
-                    setVideoPath(videoFile.link)
-                    setOnPreparedListener { mediaPlayer ->
-                        // Hide loading indicator when video is prepared
-                        videoLoadingIndicator.visibility = View.GONE
-                        previewVideo.visibility = View.VISIBLE
-                        
-                        mediaPlayer.isLooping = true
-                        mediaPlayer.setVolume(0f, 0f) // Mute the video
-                        start()
-                    }
-                    setOnErrorListener { _, what, extra ->
-                        Log.e("VideoPreview", "Error playing video: what=$what, extra=$extra")
-                        // Hide loading indicator on error
-                        videoLoadingIndicator.visibility = View.GONE
-                        showPlaceholder()
-                        true
-                    }
-                }
-            } ?: run {
-                // Hide loading indicator if no video file
-                videoLoadingIndicator.visibility = View.GONE
-                showPlaceholder() 
-            }
-        }
-    }
-
-    private fun showPlaceholder() {
-        binding.apply {
-            previewImage.visibility = View.GONE
-            previewVideo.visibility = View.GONE
-        }
-    }
-
-    private fun setupColorPreview() {
-        lifecycleScope.launch {
-            viewModel.previewGradient.collect { gradientDrawable ->
-                gradientDrawable?.let { binding.previewColor.background = it }
-            }
-        }
-    }
-
+    
     override fun onPause() {
         super.onPause()
-        // Pause video and gradient animations
-        binding.previewVideo.apply { if (isPlaying) pause() }
-        viewModel.previewGradient.value?.let { gradient ->
-            gradient.updateSettings(gradient.settings.copy(isAnimated = false))
-        }
-        
-        // Note: We no longer need to save settings here because they're saved immediately when changed
-        // This maintains compatibility with existing code and ensures any final state is captured
+        // Note: Video pausing and gradient animations are handled in the Composable
+        // We no longer need to explicitly save settings as they're saved when changed
     }
-
-    override fun onResume() {
-        super.onResume()
-        // Resume video and gradient animations if needed
-        binding.previewVideo.apply { if (visibility == View.VISIBLE && !isPlaying) start() }
-    }
-
+    
     override fun onDestroy() {
         super.onDestroy()
-        topicPagerAdapter?.clearFragments()
-        topicPagerAdapter = null
-        binding.previewVideo.apply {
-            stopPlayback()
-            setOnPreparedListener(null)
-            setOnErrorListener(null)
+        // Cleanup is handled by Compose's lifecycle
+    }
+}
+
+// --- Screen Composable (Stateless) --- //
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@Composable
+fun BackgroundSettingsScreen(
+    uiState: BackgroundSettingsUiState,
+    onEvent: (BackgroundSettingsEvent) -> Unit,
+    onNavigateBack: () -> Unit
+) {
+    val coroutineScope = rememberCoroutineScope()
+    val focusManager = LocalFocusManager.current
+    val context = LocalContext.current
+
+    // Local state for Video Player (needed for AndroidView interaction)
+    var isVideoPlaying by remember { mutableStateOf(false) }
+    // Derived state for pager
+    val imagePagerState = rememberPagerState(initialPage = 0) { UnsplashTopics.topics.size }
+
+    // Automatically load Unsplash topic when the pager page changes
+    LaunchedEffect(imagePagerState.currentPage) {
+        val currentTopic = UnsplashTopics.topics[imagePagerState.currentPage]
+        // Trigger load only if not already loading/loaded
+        if (uiState.unsplashPhotos[currentTopic] == null && uiState.isImageLoading[currentTopic] != true) {
+            onEvent(BackgroundSettingsEvent.LoadUnsplashTopic(currentTopic))
         }
     }
 
-    private fun restoreBackgroundState() {
-        lifecycleScope.launch {
-            viewModel.backgroundType.collect { type ->
-                // Update UI based on background type
-                binding.backgroundTypeSegmentedButton.check(
-                    when (type) {
-                        BackgroundType.COLOR -> R.id.noneButton
-                        BackgroundType.IMAGE -> R.id.imageButton
-                        BackgroundType.VIDEO -> R.id.videoButton
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.background_settings)) },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack, // Use AutoMirrored
+                            contentDescription = stringResource(R.string.cd_back) // Use string resource
+                        )
                     }
+                }
+            )
+        }
+    ) { paddingValues ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            // Preview Section
+            item {
+                BackgroundPreview(uiState = uiState, isVideoPlaying = isVideoPlaying) { isPlaying ->
+                    isVideoPlaying = isPlaying // Update local state based on player callback
+                }
+            }
+
+            // Background Type Selection Card
+            item {
+                BackgroundTypeSelector(selectedType = uiState.selectedBackgroundType) {
+                    onEvent(BackgroundSettingsEvent.SelectBackgroundType(it))
+                }
+            }
+
+            // Color Settings Card
+            item {
+                AnimatedVisibility(
+                    visible = uiState.selectedBackgroundType == BackgroundType.COLOR,
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                ) {
+                    ColorSettingsCard(
+                        colorModel = uiState.colorModel,
+                        onColorSelected = { color -> onEvent(BackgroundSettingsEvent.SelectColor(color)) },
+                        onGradientToggled = { enabled -> onEvent(BackgroundSettingsEvent.ToggleGradient(enabled)) }
+                        // Add gradient direction event if needed
+                    )
+                }
+            }
+
+            // Image Settings Card
+            item {
+                AnimatedVisibility(
+                    visible = uiState.selectedBackgroundType == BackgroundType.IMAGE,
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                ) {
+                    ImageSettingsCard(
+                        topics = UnsplashTopics.topics,
+                        photosByTopic = uiState.unsplashPhotos,
+                        isLoadingByTopic = uiState.isImageLoading,
+                        pagerState = imagePagerState,
+                        onImageSelected = { topic, photo -> onEvent(BackgroundSettingsEvent.SelectImage(topic, photo)) },
+                        coroutineScope = coroutineScope // Pass scope for pager scroll
+                    )
+                }
+            }
+
+            // Video Settings Card
+            item {
+                AnimatedVisibility(
+                    visible = uiState.selectedBackgroundType == BackgroundType.VIDEO,
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                ) {
+                     VideoSettingsCard(
+                        videos = uiState.videos,
+                        isLoading = uiState.isVideoLoading,
+                        searchQuery = uiState.videoSearchQuery,
+                        onQueryChanged = { query -> onEvent(BackgroundSettingsEvent.UpdateVideoSearchQuery(query)) },
+                        onSearch = { query -> onEvent(BackgroundSettingsEvent.SearchVideos(query)) },
+                        onVideoSelected = { video -> onEvent(BackgroundSettingsEvent.SelectVideo(video)) },
+                        focusManager = focusManager
+                    )
+                }
+            }
+        }
+    }
+}
+
+// --- Extracted Composables for better organization --- //
+
+@Composable
+fun BackgroundPreview(
+    uiState: BackgroundSettingsUiState,
+    isVideoPlaying: Boolean,
+    onVideoPlaybackStateChanged: (Boolean) -> Unit
+) {
+    val context = LocalContext.current
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(200.dp)
+            .background(MaterialTheme.colorScheme.surfaceVariant) // Placeholder background
+    ) {
+        when (uiState.selectedBackgroundType) {
+            BackgroundType.COLOR -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(color = Color(uiState.colorModel.color))
                 )
-                updateEditorVisibility(type)
+            }
+            BackgroundType.IMAGE -> {
+                SubcomposeAsyncImage(
+                    model = ImageRequest.Builder(context)
+                        .data(uiState.imageModel.imageUrl.ifEmpty { R.drawable.placeholder }) // Placeholder if empty
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = stringResource(R.string.cd_background_image_preview),
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                    loading = { PreviewLoadingIndicator() }
+                )
+            }
+            BackgroundType.VIDEO -> {
+                Box(Modifier.fillMaxSize()) {
+                    val videoUrl = uiState.videoModel.url
+                    if (videoUrl.isNotEmpty()) {
+                        AndroidView(
+                            factory = { ctx ->
+                                VideoView(ctx).apply {
+                                    setVideoURI(Uri.parse(videoUrl))
+                                    setOnPreparedListener { mediaPlayer ->
+                                        mediaPlayer.isLooping = true
+                                        mediaPlayer.setVolume(0f, 0f)
+                                        start()
+                                        onVideoPlaybackStateChanged(true)
+                                    }
+                                    setOnErrorListener { _, what, extra ->
+                                        LogUtils.d("Video error: what=$what, extra=$extra")
+                                        onVideoPlaybackStateChanged(false)
+                                        true
+                                    }
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .align(Alignment.Center),
+                            onRelease = { videoView ->
+                                videoView.stopPlayback()
+                                onVideoPlaybackStateChanged(false)
+                            }
+                        )
+
+                        if (!isVideoPlaying) {
+                            PreviewLoadingIndicator()
+                        }
+                    } else {
+                        // Show placeholder text if no video URL
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                           Text(stringResource(R.string.no_video_selected))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun PreviewLoadingIndicator() {
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        CircularProgressIndicator()
+    }
+}
+
+@Composable
+fun BackgroundTypeSelector(selectedType: BackgroundType, onTypeSelected: (BackgroundType) -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.background_type_title),
+                style = MaterialTheme.typography.titleMedium
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            SegmentedButtonRow(selectedType = selectedType, onTypeSelected = onTypeSelected)
+        }
+    }
+}
+
+@Composable
+fun SegmentedButtonRow(selectedType: BackgroundType, onTypeSelected: (BackgroundType) -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(48.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surface)
+    ) {
+        val options = BackgroundType.entries.toList()
+        options.forEachIndexed { index, type ->
+            val label = when (type) {
+                BackgroundType.COLOR -> stringResource(R.string.background_type_color)
+                BackgroundType.IMAGE -> stringResource(R.string.background_type_image)
+                BackgroundType.VIDEO -> stringResource(R.string.background_type_video)
+            }
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .background(
+                        if (selectedType == type) MaterialTheme.colorScheme.primary else Color.Transparent
+                    )
+                    .clickable { onTypeSelected(type) },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = label,
+                    color = if (selectedType == type) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                )
+            }
+
+            if (index < options.size - 1) {
+                Divider(
+                    modifier = Modifier
+                        .width(1.dp)
+                        .fillMaxHeight(),
+                    color = MaterialTheme.colorScheme.outlineVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ColorSettingsCard(
+    colorModel: BackgroundModel.ColorModel,
+    onColorSelected: (Int) -> Unit,
+    onGradientToggled: (Boolean) -> Unit
+    // Add onDirectionChanged lambda if needed
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp), // Consistent padding
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.select_colors),
+                style = MaterialTheme.typography.titleMedium
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            ColorSwatches(selectedColor = colorModel.color, onColorSelected = onColorSelected)
+            Divider(modifier = Modifier.padding(vertical = 16.dp))
+            GradientSwitch(enabled = colorModel.enableFluidColor, onToggle = onGradientToggled)
+            // Add Gradient Direction controls here if implemented
+            AnimatedVisibility(visible = colorModel.enableFluidColor) {
+                 Column(modifier = Modifier.padding(top = 16.dp)) {
+                     Text(
+                         text = stringResource(R.string.gradient_direction), // Placeholder
+                         style = MaterialTheme.typography.bodyMedium
+                     )
+                     // Gradient direction controls would go here
+                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun ColorSwatches(selectedColor: Int, onColorSelected: (Int) -> Unit) {
+    // Define colors list outside LazyRow scope but within the Composable
+    val colors = remember {
+         listOf(
+            0xFFE57373, 0xFF81C784, 0xFF64B5F6, 0xFFFFB74D, // Reds, Greens, Blues, Oranges
+            0xFF9575CD, 0xFF4DB6AC, 0xFFF06292, 0xFFFFD54F, // Purples, Teals, Pinks, Yellows
+            0xFFFFFFFF, 0xFF616161, 0xFF000000             // White, Grey, Black
+        ).map { it.toInt() }
+    }
+
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = PaddingValues(horizontal = 4.dp)
+    ) {
+        // Pass the pre-defined list
+        items(colors) { color ->
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(Color(color))
+                    .clickable { onColorSelected(color) }
+                    .border(
+                        width = 3.dp,
+                        color = if (selectedColor == color) MaterialTheme.colorScheme.primary else Color.Transparent,
+                        shape = CircleShape
+                    )
+            )
+        }
+    }
+}
+
+@Composable
+fun GradientSwitch(enabled: Boolean, onToggle: (Boolean) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = stringResource(R.string.enable_gradient),
+            style = MaterialTheme.typography.bodyLarge
+        )
+        Switch(checked = enabled, onCheckedChange = onToggle)
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun ImageSettingsCard(
+    topics: List<String>,
+    photosByTopic: Map<String, List<UnsplashPhotoDto>>,
+    isLoadingByTopic: Map<String, Boolean>,
+    pagerState: androidx.compose.foundation.pager.PagerState,
+    onImageSelected: (String, UnsplashPhotoDto) -> Unit,
+    coroutineScope: kotlinx.coroutines.CoroutineScope
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            ScrollableTabRow(
+                selectedTabIndex = pagerState.currentPage,
+                indicator = { tabPositions ->
+                    if (pagerState.currentPage < tabPositions.size) { // Bounds check
+                        TabRowDefaults.Indicator(
+                             modifier = Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage])
+                        )
+                    }
+                },
+                edgePadding = 0.dp // Remove default padding
+            ) {
+                topics.forEachIndexed { index, topic ->
+                    Tab(
+                        selected = pagerState.currentPage == index,
+                        onClick = { coroutineScope.launch { pagerState.animateScrollToPage(index) } },
+                        text = { Text(topic, style = MaterialTheme.typography.bodyMedium) }
+                    )
+                }
+            }
+
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier
+                    .height(350.dp) // Give Pager a fixed height
+                    .fillMaxWidth()
+            ) { page ->
+                val currentTopic = topics[page]
+                val photos = photosByTopic[currentTopic]
+                val isLoading = isLoadingByTopic[currentTopic] ?: false
+
+                 Box(modifier = Modifier.fillMaxSize()) {
+                     if (isLoading) {
+                         PreviewLoadingIndicator()
+                     } else if (photos != null) {
+                         if (photos.isEmpty()) {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
+                                Text(stringResource(R.string.no_images_found, currentTopic))
+                            }
+                         } else {
+                            LazyVerticalGrid(
+                                columns = GridCells.Fixed(2),
+                                contentPadding = PaddingValues(16.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                items(photos, key = { it.id }) { photo ->
+                                    ImageThumbnail(photo = photo) {
+                                         onImageSelected(currentTopic, photo)
+                                    }
+                                }
+                            }
+                         }
+                     } else {
+                          // Placeholder before loading starts, or if error occurred (handled in VM)
+                           Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
+                                Text(stringResource(R.string.loading_topic, currentTopic))
+                           }
+                     }
+                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun ImageThumbnail(photo: UnsplashPhotoDto, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .aspectRatio(1f) // Make thumbnails square
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(8.dp) // Slightly rounded corners
+    ) {
+        SubcomposeAsyncImage(
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(photo.urls.thumb)
+                .crossfade(true)
+                .build(),
+            contentDescription = photo.user.name ?: stringResource(R.string.cd_unsplash_image),
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize(),
+            loading = { Box(Modifier.background(MaterialTheme.colorScheme.surfaceVariant)) } // Simple placeholder
+        )
+    }
+}
+
+@Composable
+fun VideoSettingsCard(
+    videos: List<PexelsVideo>,
+    isLoading: Boolean,
+    searchQuery: String,
+    onQueryChanged: (String) -> Unit,
+    onSearch: (String) -> Unit,
+    onVideoSelected: (PexelsVideo) -> Unit,
+    focusManager: androidx.compose.ui.focus.FocusManager
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = onQueryChanged,
+                label = { Text(stringResource(R.string.video_source_title)) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                keyboardActions = KeyboardActions(
+                    onSearch = {
+                        focusManager.clearFocus()
+                        onSearch(searchQuery)
+                    }
+                ),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(300.dp) // Fixed height for the grid container
+            ) {
+                if (isLoading) {
+                     PreviewLoadingIndicator()
+                 } else {
+                     if (videos.isEmpty() && searchQuery.isNotEmpty()) {
+                          Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                              Text(stringResource(R.string.no_videos_found, searchQuery))
+                          }
+                     } else {
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(2),
+                            contentPadding = PaddingValues(vertical = 8.dp), // Padding for grid itself
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            items(videos, key = { it.id }) { video ->
+                                VideoThumbnail(
+                                    video = BackgroundModel.VideoModel(pixelVideo = video),
+                                    onClick = { onVideoSelected(video) }
+                                )
+                            }
+                        }
+                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun VideoThumbnail(video: BackgroundModel.VideoModel, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(120.dp)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            AsyncImage(
+                model = video.pixelVideo.thumbnail,
+                contentDescription = stringResource(R.string.cd_video_thumbnail),
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+            // Optional duration overlay
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(8.dp)
+                    .background(
+                        color = Color.Black.copy(alpha = 0.6f),
+                        shape = RoundedCornerShape(4.dp)
+                    )
+                    .padding(horizontal = 6.dp, vertical = 2.dp)
+            ) {
+                Text(
+                    text = "${video.pixelVideo.duration}s",
+                    style = MaterialTheme.typography.labelSmall, // Smaller label
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
             }
         }
     }

@@ -7,7 +7,6 @@ import com.saidim.clockface.background.video.PexelsVideo
 
 sealed class BackgroundModel {
     data class ColorModel(
-//        val colors: MutableList<Int> = mutableListOf(),
         var color: Int = Color.BLACK,
         var enableFluidColor: Boolean = false,
     ) : BackgroundModel() {
@@ -16,7 +15,6 @@ sealed class BackgroundModel {
     }
 
     data class ImageModel(
-//        var images: MutableList<String> = mutableListOf(),
         var imageUrl: String = "",
         var enableSlides: Boolean = false,
         var enableAnimation: Boolean = false,
