@@ -61,13 +61,16 @@ class ClockDisplayActivity : AppCompatActivity() {
                 }
             }
 
-            // Observe clock style config
-            appSettings.getClockStyleConfig(ClockStyle.MINIMAL).collect { config ->
-                if (config is ClockStyleConfig.MinimalConfig) {
-                    findViewById<TextView>(R.id.clockText).apply {
-                        setTextColor(config.fontColor)
-                        textSize = 32f * config.fontSize
-                    }
+            // Observe the single clock style config directly
+            appSettings.clockStyleConfig.collect { config ->
+                Log.d("ClockDisplayActivity", "Applying config: $config")
+                val clockText = findViewById<TextView>(R.id.clockText)
+                // Apply the single ClockStyleConfig
+                clockText.apply {
+                    setTextColor(config.fontColor)
+                    textSize = 32f * config.fontSize // Assuming 32f is a base size
+                    // TODO: Apply typeface based on config.fontFamily
+                    // TODO: Apply animation based on config.animation
                 }
             }
         }

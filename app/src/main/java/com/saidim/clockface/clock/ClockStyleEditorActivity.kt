@@ -1,6 +1,5 @@
 package com.saidim.clockface.clock
 
-import ClockStyle
 import android.graphics.Typeface
 import android.os.Bundle
 import android.widget.TextView
@@ -29,13 +28,19 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.lifecycleScope
 import com.saidim.clockface.clock.ClockStyleEditorActivity.Companion.SHARED_ELEMENT_NAME
+import com.saidim.clockface.clock.syles.ClockStyleConfig
+import com.saidim.clockface.settings.AppSettings
 import com.saidim.clockface.ui.theme.ClockFaceTheme
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import java.util.*
 
 class ClockStyleEditorActivity : ComponentActivity() {
     private val viewModel: ClockStyleEditorViewModel by viewModels()
     private lateinit var updateTimer: Timer
+    private lateinit var config: ClockStyleConfig
 
     companion object {
         const val EXTRA_STYLE = "extra_style"
@@ -44,13 +49,7 @@ class ClockStyleEditorActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val style = intent.getSerializableExtra(EXTRA_STYLE) as ClockStyle
-
-        // Ensure only Minimal style is edited
-        if (style != ClockStyle.MINIMAL) {
-            finish()
-            return
-        }
+        lifecycleScope.launch { config =  AppSettings.instance.clockStyleConfig.first() }
 
         setContent {
             ClockFaceTheme {
@@ -59,7 +58,7 @@ class ClockStyleEditorActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     ClockStyleEditorScreen(
-                        style = style,
+                        config,
                         viewModel = viewModel,
                         onNavigateBack = { finishAfterTransition() }
                     )
@@ -67,10 +66,10 @@ class ClockStyleEditorActivity : ComponentActivity() {
             }
         }
 
-        setupPreview(style)
+        setupPreview()
     }
 
-    private fun setupPreview(style: ClockStyle) {
+    private fun setupPreview() {
         updateTimer = Timer().apply {
             schedule(object : TimerTask() {
                 override fun run() {
@@ -96,11 +95,11 @@ private fun getDisplayLargeTextSize(): Float {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClockStyleEditorScreen(
-    style: ClockStyle,
+    config: ClockStyleConfig,
     viewModel: ClockStyleEditorViewModel,
     onNavigateBack: () -> Unit
 ) {
-    var currentTime by remember { mutableStateOf(ClockStyleFormatter.formatTime(style)) }
+    var currentTime by remember { mutableStateOf(ClockStyleFormatter.formatTime()) }
     val textSize = getDisplayLargeTextSize()
 
     // Get screen dimensions
@@ -131,7 +130,7 @@ fun ClockStyleEditorScreen(
         Timer().apply {
             schedule(object : TimerTask() {
                 override fun run() {
-                    currentTime = ClockStyleFormatter.formatTime(style)
+                    currentTime = ClockStyleFormatter.formatTime()
                 }
             }, 0, 1000)
         }
@@ -154,7 +153,7 @@ fun ClockStyleEditorScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(style.displayName) },
+                title = { Text("Clock Config") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")

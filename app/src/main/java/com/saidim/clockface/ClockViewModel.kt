@@ -1,6 +1,5 @@
 package com.saidim.clockface
 
-import ClockStyle
 import android.app.Application
 import android.graphics.drawable.GradientDrawable
 import androidx.lifecycle.AndroidViewModel
@@ -35,9 +34,6 @@ class ClockViewModel(application: Application) : AndroidViewModel(application) {
     private val _showSeconds = MutableLiveData(true)
     val showSeconds: LiveData<Boolean> = _showSeconds
 
-    private val _clockStyle = MutableLiveData<ClockStyle>(ClockStyle.MINIMAL)
-    val clockStyle: LiveData<ClockStyle> = _clockStyle
-
     val backgroundModel = AppSettings.instance.backgroundModel
 
     init {
@@ -55,17 +51,11 @@ class ClockViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun updateTime() {
         val currentDate = Date()
-        _currentTime.value = when (clockStyle.value) {
-            ClockStyle.MINIMAL -> {
-                val pattern = when {
-                    showSeconds.value == true -> if (is24Hour.value == true) "HH:mm:ss" else "hh:mm:ss a"
-                    else -> if (is24Hour.value == true) "HH:mm" else "hh:mm a"
-                }
-                SimpleDateFormat(pattern, Locale.getDefault()).format(currentDate)
-            }
-
-            else -> ClockStyleFormatter.formatTime(clockStyle.value ?: ClockStyle.MINIMAL, currentDate)
+        val pattern = when {
+            showSeconds.value == true -> if (is24Hour.value == true) "HH:mm:ss" else "hh:mm:ss a"
+            else -> if (is24Hour.value == true) "HH:mm" else "hh:mm a"
         }
+        _currentTime.value = SimpleDateFormat(pattern, Locale.getDefault()).format(currentDate)
     }
 
     fun setTimeFormat(is24Hour: Boolean) {
@@ -74,9 +64,5 @@ class ClockViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setShowSeconds(show: Boolean) {
         _showSeconds.value = show
-    }
-
-    fun setClockStyle(style: ClockStyle) {
-        _clockStyle.value = style
     }
 } 

@@ -6,7 +6,7 @@ import androidx.activity.viewModels
 import androidx.core.app.ActivityOptionsCompat
 import com.saidim.clockface.background.ComposeBackgroundSettingsActivity
 import com.saidim.clockface.base.BaseActivity
-import com.saidim.clockface.clock.ClockStylesActivity
+import com.saidim.clockface.clock.ClockStyleEditorActivity
 import com.saidim.clockface.clock.ColorPickerActivity
 import com.saidim.clockface.databinding.ActivityMainBinding
 
@@ -60,7 +60,7 @@ class MainActivity : BaseActivity() {
     }
 
     private fun openClockStyles() {
-        startActivity(Intent(this, ClockStylesActivity::class.java))
+        startActivity(Intent(this, ClockStyleEditorActivity::class.java))
     }
 
     private fun openSettings() {

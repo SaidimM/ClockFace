@@ -1,6 +1,5 @@
 package com.saidim.clockface.clock
 
-import ClockStyle
 import android.app.Application
 import android.content.Context
 import androidx.compose.ui.graphics.Color
@@ -10,7 +9,6 @@ import androidx.lifecycle.viewModelScope
 import com.saidim.clockface.clock.syles.ClockStyleConfig
 import com.saidim.clockface.settings.AppSettings
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -37,16 +35,14 @@ class ClockStyleEditorViewModel(application: Application) : AndroidViewModel(app
     init {
         viewModelScope.launch {
             // Load existing settings if available
-            appSettings.getClockStyleConfig(ClockStyle.MINIMAL).first().let { config ->
-                if (config is ClockStyleConfig.MinimalConfig) {
-                    _clockColor.value = Color(config.fontColor)
-                    _clockSize.value = config.fontSize
-                    _clockFontFamily.value = config.fontFamily
-                    _clockAnimation.value = try {
-                        ClockAnimation.valueOf(config.animation)
-                    } catch (e: Exception) {
-                        ClockAnimation.NONE
-                    }
+            appSettings.clockStyleConfig.first().let { config ->
+                _clockColor.value = Color(config.fontColor)
+                _clockSize.value = config.fontSize
+                _clockFontFamily.value = config.fontFamily
+                _clockAnimation.value = try {
+                    ClockAnimation.valueOf(config.animation)
+                } catch (e: Exception) {
+                    ClockAnimation.NONE
                 }
             }
         }
@@ -75,7 +71,7 @@ class ClockStyleEditorViewModel(application: Application) : AndroidViewModel(app
     fun saveSettings() {
         viewModelScope.launch {
             // Create MinimalConfig with current settings
-            val minimalConfig = ClockStyleConfig.MinimalConfig(
+            val minimalConfig = ClockStyleConfig(
                 fontColor = clockColor.value.toArgb(),
                 fontSize = clockSize.value,
                 fontFamily = clockFontFamily.value,
@@ -83,7 +79,7 @@ class ClockStyleEditorViewModel(application: Application) : AndroidViewModel(app
             )
 
             // Save the config to AppSettings
-            appSettings.updateClockStyleConfig(ClockStyle.MINIMAL, minimalConfig)
+            appSettings.updateClockStyleConfig(minimalConfig)
         }
     }
 

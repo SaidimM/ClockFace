@@ -1,6 +1,5 @@
 package com.saidim.clockface.settings
 
-import ClockStyle
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
@@ -26,7 +25,6 @@ class AppSettings {
     }
 
     private object Keys {
-        val CLOCK_STYLE = intPreferencesKey("clock_style")
         val BACKGROUND_TYPE = intPreferencesKey("background_type")
         val BACKGROUND_MODEL = stringPreferencesKey("background_model")
         val CLOCK_STYLE_CONFIG = stringPreferencesKey("clock_style_config")
@@ -45,7 +43,6 @@ class AppSettings {
     }
 
     // Int preferences
-    val clockStyle = getPreference(Keys.CLOCK_STYLE, 0)
     val backgroundType = getPreference(Keys.BACKGROUND_TYPE, 0).map { BackgroundType.entries[it] }
 
     // String preferences
@@ -82,28 +79,26 @@ class AppSettings {
     }
 
     // Update functions
-    suspend fun updateClockStyle(value: Int) = setPreference(Keys.CLOCK_STYLE, value)
     suspend fun updateBackgroundType(value: Int) = setPreference(Keys.BACKGROUND_TYPE, value)
     suspend fun updateBackgroundModel(backgroundModel: BackgroundModel) =
         setPreference(Keys.BACKGROUND_MODEL, backgroundModel.toJson())
 
-    // Store configuration for current style
-    suspend fun updateClockStyleConfig(style: ClockStyle, config: ClockStyleConfig) {
+    // Store configuration (no longer style-specific)
+    suspend fun updateClockStyleConfig(config: ClockStyleConfig) {
         setPreference(Keys.CLOCK_STYLE_CONFIG, ClockStyleConfigSerializer.serialize(config))
     }
 
-    // Get configuration for current style
-    fun getClockStyleConfig(style: ClockStyle): Flow<ClockStyleConfig> = flow {
-        val json = getPreference(Keys.CLOCK_STYLE_CONFIG, "").first()
-        val config = if (json.isEmpty()) {
-            style.defaultConfig
-        } else {
-            try {
-                ClockStyleConfigSerializer.deserialize(json, style)
-            } catch (e: Exception) {
-                style.defaultConfig
+    // Get configuration (no longer style-specific)
+    val clockStyleConfig: Flow<ClockStyleConfig> = 
+        getPreference(Keys.CLOCK_STYLE_CONFIG, "").map {
+            if (it.isEmpty()) {
+                ClockStyleConfig() // Default config
+            } else {
+                try {
+                    ClockStyleConfigSerializer.deserialize(it)
+                } catch (e: Exception) {
+                    ClockStyleConfig() // Fallback to default
+                }
             }
         }
-        emit(config)
-    }
 }
