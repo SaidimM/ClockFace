@@ -4,6 +4,7 @@ import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.VideoView
 import androidx.activity.enableEdgeToEdge
@@ -22,9 +23,10 @@ import kotlinx.coroutines.launch
 import android.graphics.Typeface
 import android.util.Log
 import android.graphics.Color
-import android.view.animation.AlphaAnimation
-import android.view.animation.ScaleAnimation
-import android.view.animation.TranslateAnimation
+import android.view.Gravity
+import android.view.ViewGroup
+import android.widget.FrameLayout
+import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import androidx.compose.ui.graphics.toArgb
 
 class ClockDisplayActivity : AppCompatActivity() {
@@ -34,6 +36,7 @@ class ClockDisplayActivity : AppCompatActivity() {
     private lateinit var timeTextAnimator: TimeTextAnimator
     private lateinit var rootView: View
     private lateinit var imageLoader: ImageLoader
+    private lateinit var clockCharactersContainer: LinearLayout
     private val appSettings = AppSettings.instance
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -42,8 +45,10 @@ class ClockDisplayActivity : AppCompatActivity() {
         setContentView(R.layout.activity_clock_display)
 
         rootView = findViewById(R.id.root)
-        val clockText = findViewById<TextView>(R.id.clockText)
-        timeTextAnimator = TimeTextAnimator(clockText)
+        
+        // Set up a container for individual clock characters
+        setupClockCharactersContainer()
+        
         imageLoader = ImageLoader(this)
 
         setupObservers()
@@ -58,6 +63,30 @@ class ClockDisplayActivity : AppCompatActivity() {
             viewModel.setShowSeconds(it)
         }
     }
+    
+    private fun setupClockCharactersContainer() {
+        // Find the original clockText view to get its parent
+        val originalClockText = findViewById<TextView>(R.id.clockText)
+        val parent = originalClockText.parent as ViewGroup
+        
+        // Create a container for the character views
+        clockCharactersContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            layoutParams = FrameLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply {
+                gravity = Gravity.CENTER
+            }
+            id = View.generateViewId() // Generate a unique ID
+        }
+        
+        // Replace the original clockText with our container
+        val index = parent.indexOfChild(originalClockText)
+        parent.removeView(originalClockText)
+        parent.addView(clockCharactersContainer, index)
+        
+        // Initialize the animator with the container
+        timeTextAnimator = TimeTextAnimator(clockCharactersContainer)
+    }
 
     private fun setupObservers() {
         lifecycleScope.launch {
@@ -71,70 +100,16 @@ class ClockDisplayActivity : AppCompatActivity() {
             // Observe the single clock style config directly
             appSettings.clockStyleConfig.collect { config ->
                 Log.d("ClockDisplayActivity", "Applying config: $config")
-                val clockText = findViewById<TextView>(R.id.clockText)
                 
-                // Apply the single ClockStyleConfig
-                clockText.apply {
-                    // Update content
-                    textAlignment = android.view.View.TEXT_ALIGNMENT_CENTER
-                    setTextColor(config.fontColor)
-                    textSize = 32f * config.fontSize // Base size multiplied by config size
-                    
-                    // Apply typeface from config
-                    typeface = TypefaceUtil.getTypefaceFromConfig(context, config.fontFamily)
-                    
-                    // Apply animation based on config
-                    applyClockAnimation(this, config.animation)
+                // Update the animator with new style properties
+                timeTextAnimator.apply {
+                    setAnimationType(config.animation)
+                    updateTextProperties(
+                        color = config.fontColor,
+                        size = 32f * config.fontSize, // Base size multiplied by config size
+                        font = TypefaceUtil.getTypefaceFromConfig(this@ClockDisplayActivity, config.fontFamily)
+                    )
                 }
-            }
-        }
-    }
-    
-    private fun applyClockAnimation(textView: TextView, animation: ClockAnimation) {
-        // Clear any existing animations
-        textView.clearAnimation()
-        
-        when (animation) {
-            ClockAnimation.FADE -> {
-                val fadeAnim = AlphaAnimation(0.0f, 1.0f).apply {
-                    duration = 500
-                    fillAfter = true
-                }
-                textView.startAnimation(fadeAnim)
-            }
-            ClockAnimation.PULSE -> {
-                val pulseAnim = ScaleAnimation(
-                    0.8f, 1.0f, 0.8f, 1.0f,
-                    ScaleAnimation.RELATIVE_TO_SELF, 0.5f,
-                    ScaleAnimation.RELATIVE_TO_SELF, 0.5f
-                ).apply {
-                    duration = 300
-                    fillAfter = true
-                }
-                textView.startAnimation(pulseAnim)
-            }
-            ClockAnimation.SLIDE -> {
-                val slideAnim = TranslateAnimation(
-                    -50f, 0f, 0f, 0f
-                ).apply {
-                    duration = 300
-                    fillAfter = true
-                }
-                textView.startAnimation(slideAnim)
-            }
-            ClockAnimation.BOUNCE -> {
-                val bounceAnim = ScaleAnimation(
-                    0.8f, 1.0f, 1.2f, 1.0f,
-                    ScaleAnimation.RELATIVE_TO_SELF, 0.5f,
-                    ScaleAnimation.RELATIVE_TO_SELF, 0.5f
-                ).apply {
-                    duration = 500
-                    fillAfter = true
-                }
-                textView.startAnimation(bounceAnim)
-            }
-            else -> {
-                // No animation (ClockAnimation.NONE)
             }
         }
     }
