@@ -5,6 +5,7 @@ import android.content.Context
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.saidim.clockface.clock.syles.ClockStyleConfig
 import com.saidim.clockface.settings.AppSettings
@@ -28,9 +29,7 @@ class ClockStyleEditorViewModel(application: Application) : AndroidViewModel(app
     private val _clockAnimation = MutableStateFlow(ClockAnimation.NONE)
     val clockAnimation = _clockAnimation.asStateFlow()
 
-    // Dummy properties that will be used by the UI but not saved
-    val is24Hour = MutableStateFlow(false).asStateFlow()
-    val showSeconds = MutableStateFlow(false).asStateFlow()
+    val clockStyleConfig = appSettings.clockStyleConfig.asLiveData()
 
     init {
         viewModelScope.launch {
@@ -39,11 +38,7 @@ class ClockStyleEditorViewModel(application: Application) : AndroidViewModel(app
                 _clockColor.value = Color(config.fontColor)
                 _clockSize.value = config.fontSize
                 _clockFontFamily.value = config.fontFamily
-                _clockAnimation.value = try {
-                    ClockAnimation.valueOf(config.animation)
-                } catch (e: Exception) {
-                    ClockAnimation.NONE
-                }
+                _clockAnimation.value = config.animation
             }
         }
     }
@@ -70,58 +65,29 @@ class ClockStyleEditorViewModel(application: Application) : AndroidViewModel(app
 
     fun saveSettings() {
         viewModelScope.launch {
-            // Create MinimalConfig with current settings
-            val minimalConfig = ClockStyleConfig(
+            // Create ClockStyleConfig with current settings
+            val clockStyleConfig = ClockStyleConfig(
                 fontColor = clockColor.value.toArgb(),
                 fontSize = clockSize.value,
                 fontFamily = clockFontFamily.value,
-                animation = clockAnimation.value.name
+                animation = clockAnimation.value
             )
 
             // Save the config to AppSettings
-            appSettings.updateClockStyleConfig(minimalConfig)
+            appSettings.updateClockStyleConfig(clockStyleConfig)
         }
     }
 
-    // Get all font families from assets
+    // Get all font families using TypefaceUtil
     fun getFontFamilies(context: Context): List<Pair<String, String>> {
-        return try {
-            val assetManager = context.assets
-            val fontDirs = assetManager.list("fonts") ?: emptyArray()
-            
-            fontDirs.filter { dir ->
-                try {
-                    val fontFiles = assetManager.list("fonts/$dir") ?: emptyArray()
-                    fontFiles.isNotEmpty() && fontFiles.any { it.endsWith(".ttf") }
-                } catch (e: Exception) {
-                    false
-                }
-            }.map { dir ->
-                val displayName = dir
-                val fontId = dir.replace(" ", "")
-                displayName to fontId
-            }.sortedBy { it.first }
-        } catch (e: Exception) {
-            listOf(
-                "Roboto" to "Roboto",
-                "Lato" to "Lato",
-                "Open Sans" to "OpenSans",
-                "Raleway" to "Raleway",
-                "Josefin Sans" to "JosefinSans"
-            )
+        val fontFamilies = TypefaceUtil.getFontFamilies(context)
+        return fontFamilies.map { family ->
+            family.displayName to family.familyName
         }
     }
     
-    // Get available weights for a font
+    // Get available weights for a font using TypefaceUtil
     fun getAvailableWeights(context: Context, fontDisplayName: String, fontTypeface: String): List<String> {
-        val fontStyles = listOf("Light", "Regular", "Medium", "Bold", "Black")
-        return fontStyles.filter { style ->
-            try {
-                val fontPath = "fonts/$fontDisplayName/$fontTypeface-$style.ttf"
-                context.assets.open(fontPath).use { it.close(); true }
-            } catch (e: Exception) {
-                false
-            }
-        }
+        return TypefaceUtil.getAvailableWeights(context, fontTypeface)
     }
 } 

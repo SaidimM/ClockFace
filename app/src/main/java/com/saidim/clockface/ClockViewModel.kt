@@ -1,6 +1,7 @@
 package com.saidim.clockface
 
 import android.app.Application
+import android.content.Context
 import android.graphics.drawable.GradientDrawable
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
@@ -56,6 +57,36 @@ class ClockViewModel(application: Application) : AndroidViewModel(application) {
             else -> if (is24Hour.value == true) "HH:mm" else "hh:mm a"
         }
         _currentTime.value = SimpleDateFormat(pattern, Locale.getDefault()).format(currentDate)
+    }
+
+
+    // Get all font families from assets
+    fun getFontFamilies(context: Context): List<Pair<String, String>> {
+        return try {
+            val assetManager = context.assets
+            val fontDirs = assetManager.list("fonts") ?: emptyArray()
+
+            fontDirs.filter { dir ->
+                try {
+                    val fontFiles = assetManager.list("fonts/$dir") ?: emptyArray()
+                    fontFiles.isNotEmpty() && fontFiles.any { it.endsWith(".ttf") }
+                } catch (e: Exception) {
+                    false
+                }
+            }.map { dir ->
+                val displayName = dir
+                val fontId = dir.replace(" ", "")
+                displayName to fontId
+            }.sortedBy { it.first }
+        } catch (e: Exception) {
+            listOf(
+                "Roboto" to "Roboto",
+                "Lato" to "Lato",
+                "Open Sans" to "OpenSans",
+                "Raleway" to "Raleway",
+                "Josefin Sans" to "JosefinSans"
+            )
+        }
     }
 
     fun setTimeFormat(is24Hour: Boolean) {

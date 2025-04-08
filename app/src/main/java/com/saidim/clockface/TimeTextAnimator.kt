@@ -1,61 +1,81 @@
 package com.saidim.clockface
 
-import android.widget.TextView
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
 import android.animation.ValueAnimator
-import android.graphics.Color
-import android.text.SpannableString
-import android.text.Spanned
-import android.text.style.ForegroundColorSpan
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.widget.TextView
 
+/**
+ * A utility class to animate text changes in the clock display.
+ * This provides smooth transitions between time updates.
+ */
 class TimeTextAnimator(private val textView: TextView) {
-    private var lastText = ""
+    private var currentAnimator: ValueAnimator? = null
+    private var isAnimating = false
     
+    /**
+     * Animates the change from current text to the new text.
+     * Uses a simple fade out/fade in animation to avoid jarring changes.
+     * 
+     * @param newText The new time text to display
+     */
     fun animateTextChange(newText: String) {
-        if (lastText.isEmpty()) {
+        // If we're already animating, cancel that animation
+        currentAnimator?.cancel()
+        
+        // If the text view already shows the new text, do nothing
+        if (textView.text == newText) return
+        
+        // If the text view is not visible, just set the text without animation
+        if (textView.alpha == 0f) {
             textView.text = newText
-            lastText = newText
             return
         }
-
-        val spannableString = SpannableString(newText)
-        val animator = ValueAnimator.ofFloat(0f, 1f)
         
-        // Find which characters have changed
-        val changedIndices = newText.indices.filter { i ->
-            i >= lastText.length || newText[i] != lastText[i]
-        }
-
-        // Set initial alpha for changed characters
-        changedIndices.forEach { i ->
-            spannableString.setSpan(
-                ForegroundColorSpan(Color.TRANSPARENT),
-                i, i + 1,
-                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-            )
-        }
-
-        textView.text = spannableString
-
-        animator.duration = 150
-        animator.addUpdateListener { animation ->
-            val alpha = (animation.animatedValue as Float)
-            val color = Color.argb(
-                (alpha * 255).toInt(),
-                255, 255, 255
-            )
-
-            val newSpannable = SpannableString(newText)
-            changedIndices.forEach { i ->
-                newSpannable.setSpan(
-                    ForegroundColorSpan(color),
-                    i, i + 1,
-                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-                )
+        // Create and configure the animation
+        val animator = ValueAnimator.ofFloat(1f, 0f, 1f).apply {
+            duration = 300 // Total animation duration
+            interpolator = AccelerateDecelerateInterpolator()
+            
+            addUpdateListener { animation ->
+                val value = animation.animatedValue as Float
+                textView.alpha = value
+                
+                // When fully transparent, change the text
+                if (value <= 0.05f && textView.text != newText) {
+                    textView.text = newText
+                }
             }
-            textView.text = newSpannable
+            
+            addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationStart(animation: Animator) {
+                    isAnimating = true
+                }
+                
+                override fun onAnimationEnd(animation: Animator) {
+                    isAnimating = false
+                    currentAnimator = null
+                }
+                
+                override fun onAnimationCancel(animation: Animator) {
+                    isAnimating = false
+                    textView.alpha = 1f  // Ensure visibility is restored
+                    currentAnimator = null
+                }
+            })
         }
-
+        
+        // Start the animation
         animator.start()
-        lastText = newText
+        currentAnimator = animator
+    }
+    
+    /**
+     * Immediately cancels any ongoing animation and resets the text view.
+     */
+    fun cancel() {
+        currentAnimator?.cancel()
+        textView.alpha = 1f
     }
 } 
