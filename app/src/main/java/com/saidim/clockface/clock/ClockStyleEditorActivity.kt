@@ -85,7 +85,7 @@ class ClockStyleEditorActivity : ComponentActivity() {
 @Composable
 private fun getDisplayLargeTextSize(): Float {
     return with(LocalDensity.current) {
-        MaterialTheme.typography.displayLarge.fontSize.value
+        MaterialTheme.typography.displaySmall.fontSize.value
     }
 }
 

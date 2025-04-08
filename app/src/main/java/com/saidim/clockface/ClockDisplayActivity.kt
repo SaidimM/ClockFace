@@ -27,6 +27,7 @@ import android.view.Gravity
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.graphics.toArgb
 
 class ClockDisplayActivity : AppCompatActivity() {
@@ -66,26 +67,10 @@ class ClockDisplayActivity : AppCompatActivity() {
     
     private fun setupClockCharactersContainer() {
         // Find the original clockText view to get its parent
-        val originalClockText = findViewById<TextView>(R.id.clockText)
-        val parent = originalClockText.parent as ViewGroup
-        
-        // Create a container for the character views
-        clockCharactersContainer = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
-            layoutParams = FrameLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply {
-                gravity = Gravity.CENTER
-            }
-            id = View.generateViewId() // Generate a unique ID
-        }
-        
-        // Replace the original clockText with our container
-        val index = parent.indexOfChild(originalClockText)
-        parent.removeView(originalClockText)
-        parent.addView(clockCharactersContainer, index)
+        val originalClockText = findViewById<LinearLayout>(R.id.clockText)
         
         // Initialize the animator with the container
-        timeTextAnimator = TimeTextAnimator(clockCharactersContainer)
+        timeTextAnimator = TimeTextAnimator(originalClockText)
     }
 
     private fun setupObservers() {
@@ -106,7 +91,7 @@ class ClockDisplayActivity : AppCompatActivity() {
                     setAnimationType(config.animation)
                     updateTextProperties(
                         color = config.fontColor,
-                        size = 32f * config.fontSize, // Base size multiplied by config size
+                        size = 64 * config.fontSize, // Base size multiplied by config size
                         font = TypefaceUtil.getTypefaceFromConfig(this@ClockDisplayActivity, config.fontFamily)
                     )
                 }
