@@ -13,7 +13,6 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -28,6 +27,7 @@ import com.saidim.clockface.background.BackgroundType
 import com.saidim.clockface.background.model.BackgroundModel
 import com.saidim.clockface.clock.TypefaceUtil
 import com.saidim.clockface.settings.AppSettings
+import com.saidim.clockface.ui.theme.ClockFaceTheme
 
 class ComposeClockDisplayActivity : ComponentActivity() {
 
@@ -47,15 +47,15 @@ class ComposeClockDisplayActivity : ComponentActivity() {
         }
 
         setContent {
-            ClockFaceAppTheme { // Assuming you have a theme defined
-                ClockScreen(viewModel = viewModel, appSettings = appSettings)
+            ClockFaceTheme { // Assuming you have a theme defined
+                clockScreen(viewModel = viewModel, appSettings = appSettings)
             }
         }
     }
 }
 
 @Composable
-fun ClockScreen(viewModel: ClockViewModel, appSettings: AppSettings) {
+fun clockScreen(viewModel: ClockViewModel, appSettings: AppSettings) {
     val backgroundType by viewModel.backgroundType.collectAsState(initial = BackgroundType.COLOR)
     val backgroundModel by viewModel.backgroundModel.collectAsState(initial = BackgroundModel.ColorModel(Color.BLACK))
     val currentTime by viewModel.currentTime.observeAsState(initial = "") // Use observeAsState for LiveData
@@ -66,10 +66,10 @@ fun ClockScreen(viewModel: ClockViewModel, appSettings: AppSettings) {
         contentAlignment = Alignment.Center
     ) {
         // Background Layer
-        BackgroundLayer(backgroundType, backgroundModel)
+        backgroundLayer(backgroundType, backgroundModel)
 
         // Clock Text Layer
-        ClockText(
+        clockText(
             time = currentTime,
             style = clockStyle
         )
@@ -77,7 +77,7 @@ fun ClockScreen(viewModel: ClockViewModel, appSettings: AppSettings) {
 }
 
 @Composable
-fun BackgroundLayer(
+fun backgroundLayer(
     type: BackgroundType,
     model: BackgroundModel?
 ) {
@@ -106,13 +106,13 @@ fun BackgroundLayer(
 
         BackgroundType.VIDEO -> {
             val videoUrl = (model as? BackgroundModel.VideoModel)?.url ?: ""
-            VideoBackground(videoUrl)
+            videoBackground(videoUrl)
         }
     }
 }
 
 @Composable
-fun VideoBackground(videoUrl: String) {
+fun videoBackground(videoUrl: String) {
     AndroidView(
         factory = { context ->
             VideoView(context).apply {
@@ -157,7 +157,7 @@ fun VideoBackground(videoUrl: String) {
 
 
 @Composable
-fun ClockText(
+fun clockText(
     time: String,
     style: com.saidim.clockface.clock.syles.ClockStyleConfig
 ) {
@@ -178,11 +178,3 @@ fun ClockText(
         fontFamily = typeface?.let { FontFamily(it) } ?: FontFamily.Default
     )
 }
-
-// Define a basic theme if you don't have one
-@Composable
-fun ClockFaceAppTheme(content: @Composable () -> Unit) {
-    MaterialTheme { // Use Material 3 theme
-        content()
-    }
-} 

@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import com.saidim.clockface.background.ComposeBackgroundSettingsActivity
 import com.saidim.clockface.clock.ClockStyleEditorActivity
 import com.saidim.clockface.clock.ColorPickerActivity
+import com.saidim.clockface.ui.theme.ClockFaceTheme
 
 class ComposeMainActivity : ComponentActivity() {
 
@@ -26,15 +27,15 @@ class ComposeMainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            ClockFaceAppTheme { // Reuse the theme from ComposeClockDisplayActivity
-                MainScreen(viewModel = viewModel)
+            ClockFaceTheme { // Reuse the theme from ComposeClockDisplayActivity
+                mainScreen(viewModel = viewModel)
             }
         }
     }
 }
 
 @Composable
-fun MainScreen(viewModel: ClockViewModel) {
+fun mainScreen(viewModel: ClockViewModel) {
     val context = LocalContext.current
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -51,8 +52,8 @@ fun MainScreen(viewModel: ClockViewModel) {
                     // Pass relevant data if needed, similar to original MainActivity
                     // Using observeAsState would be better here if the state is needed reactively
                     // For simplicity, accessing value directly for one-time read
-                    putExtra(MainActivity.EXTRA_IS_24_HOUR, viewModel.is24Hour.value ?: true)
-                    putExtra(MainActivity.EXTRA_SHOW_SECONDS, viewModel.showSeconds.value ?: true)
+                    putExtra(MainActivity.EXTRA_IS_24_HOUR, viewModel.is24Hour.value != false)
+                    putExtra(MainActivity.EXTRA_SHOW_SECONDS, viewModel.showSeconds.value != false)
                 }
                 // TODO: Implement shared element transition if desired
                 context.startActivity(intent)
