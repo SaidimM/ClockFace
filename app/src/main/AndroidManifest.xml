@@ -25,7 +25,7 @@
             android:label="@string/title_activity_test"
             android:theme="@style/Theme.ClockFace" />
         <activity
-            android:name=".MainActivity"
+            android:name=".ComposeMainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -44,16 +44,15 @@
             android:label="Background Settings"
             android:theme="@style/Theme.Material3.DayNight.NoActionBar" />
         <activity
-            android:name=".clock.ClockStylesActivity"
-            android:exported="false"
-            android:label="Clock Styles"
-            android:theme="@style/Theme.Material3.DayNight.NoActionBar" />
-        <activity
             android:name=".clock.ClockStyleEditorActivity"
             android:exported="false"
             android:theme="@style/Theme.Material3.DayNight.NoActionBar" />
         <activity
             android:name=".clock.ColorPickerActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Material3.DayNight.NoActionBar" />
+        <activity
+            android:name=".ComposeClockDisplayActivity"
             android:exported="false"
             android:theme="@style/Theme.Material3.DayNight.NoActionBar" />
     </application>

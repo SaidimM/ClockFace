@@ -41,7 +41,7 @@ class MainActivity : BaseActivity() {
     }
 
     private fun navigateToClockDisplay() {
-        val intent = Intent(this, ClockDisplayActivity::class.java).apply {
+        val intent = Intent(this, ComposeClockDisplayActivity::class.java).apply {
             putExtra(EXTRA_IS_24_HOUR, viewModel.is24Hour.value)
             putExtra(EXTRA_SHOW_SECONDS, viewModel.showSeconds.value)
         }
