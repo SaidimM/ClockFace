@@ -1,0 +1,54 @@
+<resources>
+    <string name="app_name">表盘</string>
+    <string name="clock_settings">时钟设置</string>
+    <string name="use_24_hour_format">使用24小时制</string>
+    <string name="show_seconds">显示秒数</string>
+    <string name="start_clock">启动时钟</string>
+    <string name="clock_preview_transition">clock_preview</string>
+    <!-- Background Types -->
+    <string name="background_type_color">颜色</string>
+    <string name="background_type_image">图片</string>
+    <string name="background_type_slides">幻灯片</string>
+    <string name="background_type_video">视频</string>
+    <!-- Background Settings -->
+    <string name="background_type_title">背景类型</string>
+    <string name="image_source_title">图片来源</string>
+    <string name="video_source_title">视频来源</string>
+    <string name="slideshow_settings_title">幻灯片设置</string>
+    <string name="device_button">设备</string>
+    <string name="unsplash_button">Unsplash</string>
+    <string name="interval_format">更改间隔：%d 分钟</string>
+    <string name="background_settings">背景设置</string>
+    <string name="color_settings">颜色设置</string>
+    <string name="solid_color">纯色</string>
+    <string name="gradient">渐变</string>
+    <string name="animate_gradient">动画渐变</string>
+    <string name="three_layer_gradient">三层效果</string>
+    <string name="pick_color">选择颜色</string>
+    <string name="select_color">选择颜色</string>
+    <string name="top_to_bottom">从上到下</string>
+    <string name="left_to_right">从左到右</string>
+    <!-- Color Settings -->
+    <string name="select_colors">选择颜色</string>
+    <string name="add_custom_color">添加自定义颜色</string>
+    <string name="enable_gradient">启用渐变</string>
+    <string name="gradient_direction">渐变方向</string>
+    <string name="top_bottom">从上到下</string>
+    <string name="left_right">从左到右</string>
+    <string name="diagonal">对角线</string>
+    <string name="image_preview">图片预览</string>
+    <string name="color_preview">颜色预览</string>
+    <string name="title_activity_test">TestActivity</string>
+    <string name="save">保存</string>
+    <string name="settings_saved">背景设置已保存</string>
+    <string name="searching_videos">正在搜索视频...</string>
+
+    <string name="cd_back">返回</string>
+    <string name="cd_background_image_preview">背景图片预览</string>
+    <string name="no_video_selected">未选择视频</string>
+    <string name="no_images_found">未找到 %s 的图片</string>
+    <string name="loading_topic">正在加载 %s…</string>
+    <string name="cd_unsplash_image">Unsplash 图片</string>
+    <string name="no_videos_found">未找到"%s"的视频</string>
+    <string name="cd_video_thumbnail">视频缩略图</string>
+</resources> 

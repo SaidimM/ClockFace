@@ -38,14 +38,6 @@ class ComposeClockDisplayActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Get settings from intent and update ViewModel
-        intent.getBooleanExtra("is24Hour", true).let {
-            viewModel.setTimeFormat(it)
-        }
-        intent.getBooleanExtra("showSeconds", true).let {
-            viewModel.setShowSeconds(it)
-        }
-
         setContent {
             ClockFaceTheme { // Assuming you have a theme defined
                 clockScreen(viewModel = viewModel, appSettings = appSettings)
