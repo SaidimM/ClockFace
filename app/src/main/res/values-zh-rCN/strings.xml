@@ -41,7 +41,7 @@
     <string name="title_activity_test">TestActivity</string>
     <string name="save">保存</string>
     <string name="settings_saved">背景设置已保存</string>
-    <string name="searching_videos">正在搜索视频...</string>
+    <string name="searching_videos">正在搜索视频…</string>
 
     <string name="cd_back">返回</string>
     <string name="cd_background_image_preview">背景图片预览</string>
