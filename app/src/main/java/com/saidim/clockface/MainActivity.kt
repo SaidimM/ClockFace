@@ -41,15 +41,9 @@ class MainActivity : BaseActivity() {
     }
 
     private fun navigateToClockDisplay() {
-        val intent = Intent(this, ComposeClockDisplayActivity::class.java).apply {
-            putExtra(EXTRA_IS_24_HOUR, viewModel.is24Hour.value)
-            putExtra(EXTRA_SHOW_SECONDS, viewModel.showSeconds.value)
-        }
-
+        val intent = Intent(this, ComposeClockDisplayActivity::class.java)
         val options = ActivityOptionsCompat.makeSceneTransitionAnimation(
-            this,
-            binding.startButton,
-            getString(R.string.clock_preview_transition)
+            this, binding.startButton, getString(R.string.clock_preview_transition)
         )
 
         startActivity(intent, options.toBundle())

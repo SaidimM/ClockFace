@@ -1,5 +1,6 @@
 package com.saidim.clockface
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -14,7 +15,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityOptionsCompat
+import androidx.core.content.ContextCompat.getString
 import com.saidim.clockface.background.ComposeBackgroundSettingsActivity
 import com.saidim.clockface.clock.ClockStyleEditorActivity
 import com.saidim.clockface.clock.ColorPickerActivity
@@ -37,6 +41,8 @@ class ComposeMainActivity : ComponentActivity() {
 @Composable
 fun mainScreen(viewModel: ClockViewModel) {
     val context = LocalContext.current
+    val activity = LocalContext.current as? Activity
+    val currentView = LocalView.current
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
@@ -46,17 +52,18 @@ fun mainScreen(viewModel: ClockViewModel) {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // how to get current activity object
+            // val activity = LocalContext.current as? Activity
             // Start Button
             Button(onClick = {
-                val intent = Intent(context, ComposeClockDisplayActivity::class.java).apply {
-                    // Pass relevant data if needed, similar to original MainActivity
-                    // Using observeAsState would be better here if the state is needed reactively
-                    // For simplicity, accessing value directly for one-time read
-                    putExtra(MainActivity.EXTRA_IS_24_HOUR, viewModel.is24Hour.value != false)
-                    putExtra(MainActivity.EXTRA_SHOW_SECONDS, viewModel.showSeconds.value != false)
-                }
-                // TODO: Implement shared element transition if desired
-                context.startActivity(intent)
+                val intent = Intent(context, ComposeClockDisplayActivity::class.java)
+                val options = ActivityOptionsCompat.makeSceneTransitionAnimation(
+                    activity!!, // Ensure activity is not null
+                    currentView, // Use LocalView.current here
+                    context.getString(R.string.clock_preview_transition)
+                )
+                // Need to actually start the activity with the options
+                activity.startActivity(intent, options.toBundle())
             }) {
                 Text("Start Clock") // Use appropriate string resource later
             }
