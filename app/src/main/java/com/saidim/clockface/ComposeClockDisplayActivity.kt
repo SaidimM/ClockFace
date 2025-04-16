@@ -44,6 +44,8 @@ import com.saidim.clockface.clock.TypefaceUtil
 import com.saidim.clockface.settings.AppSettings
 import com.saidim.clockface.ui.theme.ClockFaceTheme
 import kotlinx.coroutines.launch
+import kotlin.math.PI
+import kotlin.math.sin
 
 class ComposeClockDisplayActivity : ComponentActivity() {
 
@@ -205,45 +207,45 @@ fun AnimatedClockText(
     fontFamily: FontFamily,
     animationType: ClockAnimation
 ) {
-    // Previous state to detect changes
+    // Store previous time to detect changes
     val previousTime = remember { mutableStateOf("") }
 
-    // Track changed positions to animate only those characters
-    val changedPositions = remember(time, previousTime.value) {
-        if (previousTime.value.isEmpty()) {
-            // First render, mark all as changed
-            time.indices.toSet()
-        } else {
-            // Find which characters have changed
-            time.indices.filter { i ->
-                i >= previousTime.value.length || time[i] != previousTime.value[i]
-            }.toSet()
-        }
-    }
+    // Use a counter to force recomposition and animation
+    val animationCounter = remember { mutableStateOf(0) }
 
-    // Update previous time for next comparison
-    SideEffect {
+    // Detect time changes and update animation trigger
+    LaunchedEffect(time) {
         if (time != previousTime.value) {
+            Log.d("AnimClock", "Time changed: '$time' from '${previousTime.value}'. Incrementing counter.")
+            animationCounter.value++
             previousTime.value = time
         }
     }
 
-    // Display characters in a row
     Row(
         modifier = Modifier.wrapContentSize(),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Render each character with animation if needed
+        // Render each character with animation
         time.forEachIndexed { index, char ->
-            AnimatedCharacter(
-                character = char.toString(),
-                color = color,
-                fontSize = fontSize,
-                fontFamily = fontFamily,
-                animationType = animationType,
-                shouldAnimate = changedPositions.contains(index)
-            )
+            // Set a key that changes when the character changes
+            key("${animationCounter.value}_${index}_${char}") {
+                val shouldAnimate = index >= previousTime.value.length ||
+                    (index < previousTime.value.length && char != previousTime.value[index])
+
+                Log.d("AnimClock", "Char '$char' at index $index: shouldAnimate=$shouldAnimate, counter=${animationCounter.value}")
+
+                AnimatedCharacter(
+                    character = char.toString(),
+                    color = color,
+                    fontSize = fontSize,
+                    fontFamily = fontFamily,
+                    animationType = animationType,
+                    shouldAnimate = shouldAnimate,
+                    animationKey = animationCounter.value
+                )
+            }
         }
     }
 }
@@ -255,90 +257,83 @@ fun AnimatedCharacter(
     fontSize: androidx.compose.ui.unit.TextUnit,
     fontFamily: FontFamily,
     animationType: ClockAnimation,
-    shouldAnimate: Boolean
+    shouldAnimate: Boolean,
+    animationKey: Int
 ) {
-    // Animation properties
-    val animationSpec = tween<Float>(
-        durationMillis = 300,
-        easing = FastOutSlowInEasing
-    )
+    // Animation values with initial values
+    val alpha = remember { Animatable(initialValue = if (shouldAnimate) 0f else 1f) }
+    val scale = remember { Animatable(initialValue = if (shouldAnimate) 0.5f else 1f) }
+    val translateY = remember { Animatable(initialValue = if (shouldAnimate) 50f else 0f) }
 
-    // Animation values
-    val alpha = remember { Animatable(1f) }
-    val scale = remember { Animatable(1f) }
-    val translateY = remember { Animatable(0f) }
-
-    // Trigger animation when character changes
-    LaunchedEffect(character, shouldAnimate) {
+    // Use animationKey to force re-execution of LaunchedEffect
+    LaunchedEffect(animationKey, character) {
+        Log.d("AnimChar", "LaunchedEffect for '$character' (key=$animationKey): shouldAnimate=$shouldAnimate, type=$animationType")
         if (shouldAnimate) {
+            Log.d("AnimChar", "Animating '$character' with $animationType")
             when (animationType) {
                 ClockAnimation.FADE -> {
-                    // Fade out and in
-                    alpha.snapTo(1f)
-                    alpha.animateTo(0f, animationSpec)
-                    alpha.animateTo(1f, animationSpec)
+                    alpha.snapTo(0f)
+                    alpha.animateTo(1f, tween(500, easing = FastOutSlowInEasing))
                 }
 
                 ClockAnimation.PULSE -> {
-                    // Pulse effect (shrink and grow)
-                    scale.snapTo(1f)
-                    scale.animateTo(0.7f, animationSpec)
-                    scale.animateTo(1f, animationSpec)
+                    scale.snapTo(0.2f)
+                    scale.animateTo(1.5f, tween(300))
+                    scale.animateTo(1f, tween(200))
                 }
 
                 ClockAnimation.SLIDE -> {
-                    // Slide up and down
-                    translateY.snapTo(0f)
-                    translateY.animateTo(-30f, animationSpec)
-                    translateY.animateTo(0f, animationSpec)
+                    translateY.snapTo(80f)
+                    translateY.animateTo(0f, tween(500))
                 }
 
                 ClockAnimation.BOUNCE -> {
-                    // Bounce effect
-                    scale.snapTo(1f)
-                    // Squish
-                    launch {
-                        scale.animateTo(0.8f, animationSpec)
-                        scale.animateTo(1.2f, animationSpec)
-                        scale.animateTo(1f, animationSpec)
-                    }
+                    scale.snapTo(0.2f)
+                    scale.animateTo(1.4f, tween(250))
+                    scale.animateTo(0.8f, tween(100))
+                    scale.animateTo(1.15f, tween(100))
+                    scale.animateTo(0.95f, tween(100))
+                    scale.animateTo(1f, tween(100))
                 }
 
-                else -> { /* No animation */
-                }
+                else -> { /* No animation */ }
             }
+        } else {
+            // Reset animations when not animating
+            Log.d("AnimChar", "Resetting animation for '$character' (key=$animationKey)")
+            alpha.snapTo(1f)
+            scale.snapTo(1f)
+            translateY.snapTo(0f)
         }
     }
 
-    // Determine if we should use fixed width based on character
+    // Fixed width for digits to prevent layout shifts
     val isDigit = character.singleOrNull()?.isDigit() ?: false
-    // Calculate a reasonable fixed width for digits (using "0" as reference)
-    val fixedWidth = with(androidx.compose.ui.platform.LocalDensity.current) {
-        (fontSize.toPx() * 0.6f).toDp()
+    val fixedWidth = with(LocalDensity.current) {
+        (fontSize.toPx() * 0.7f).toDp()
     }
 
-    Text(
-        text = character,
-        color = color,
-        fontSize = fontSize,
-        fontFamily = fontFamily,
-        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+    Box(
         modifier = Modifier
-            .alpha(alpha.value)
-            .scale(scale.value)
-            .offset(y = translateY.value.dp)
-            // Apply fixed width only for digits, not for colons and other characters
             .then(
                 if (isDigit) {
                     Modifier.width(fixedWidth)
                 } else {
                     Modifier
                 }
-            )
-            // Add a key to help Compose identify when the character changes
-            .composed {
-                val key = character + shouldAnimate
-                remember(key) { this }
-            }
-    )
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = character,
+            color = color,
+            fontSize = fontSize,
+            fontFamily = fontFamily,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .alpha(alpha.value)
+                .scale(scale.value)
+                .offset(y = translateY.value.dp)
+        )
+    }
 }

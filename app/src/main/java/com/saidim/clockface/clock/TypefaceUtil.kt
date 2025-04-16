@@ -69,14 +69,6 @@ class TypefaceUtil {
          * @return List of FontFamily objects representing fonts from assets
          */
         fun getFontFamilies(context: Context): List<FontFamily> {
-            return getAssetFontFamilies(context)
-        }
-        
-        /**
-         * Gets all font families from the assets folder.
-         * This should only be used as a fallback when system fonts are not available.
-         */
-        private fun getAssetFontFamilies(context: Context): List<FontFamily> {
             val fontFamilies = mutableListOf<FontFamily>()
             
             try {
@@ -88,7 +80,19 @@ class TypefaceUtil {
                     try {
                         // Get all TTF files in this directory
                         val fontFiles = assetManager.list("fonts/$dir") ?: emptyArray()
-                        val ttfFiles = fontFiles.filter { it.endsWith(".ttf") || it.endsWith(".otf") }
+                        val ttfFiles = fontFiles.filter { 
+                            it.endsWith(".ttf") || it.endsWith(".otf")
+                        }.filter { file ->
+                            // Skip empty files
+                            try {
+                                val inputStream = assetManager.open("fonts/$dir/$file")
+                                val size = inputStream.available()
+                                inputStream.close()
+                                size > 0
+                            } catch (e: Exception) {
+                                false
+                            }
+                        }
                         
                         if (ttfFiles.isNotEmpty()) {
                             // Extract family name and weights
@@ -123,6 +127,8 @@ class TypefaceUtil {
                                     weights.add(FontWeight(styleName, style, typeface))
                                 } catch (e: Exception) {
                                     Log.e(TAG, "Error loading font file $fontFile: $e")
+                                    // Skip this font file and continue with others
+                                    continue
                                 }
                             }
                             
@@ -138,10 +144,25 @@ class TypefaceUtil {
                         }
                     } catch (e: Exception) {
                         Log.e(TAG, "Error processing font directory $dir: $e")
+                        // Skip this directory and continue with others
+                        continue
                     }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error getting asset fonts: $e")
+            }
+            
+            // If no fonts were loaded successfully, add Roboto as a fallback
+            if (fontFamilies.isEmpty()) {
+                fontFamilies.add(
+                    FontFamily(
+                        displayName = "Roboto",
+                        familyName = "Roboto",
+                        weights = listOf(
+                            FontWeight("Regular", Typeface.NORMAL, Typeface.DEFAULT)
+                        )
+                    )
+                )
             }
             
             return fontFamilies
@@ -219,6 +240,7 @@ class TypefaceUtil {
             val families = getFontFamilies(context)
             val family = families.find { it.familyName == familyName }
             
+            // If no weights are found, return a default list
             return family?.weights?.map { it.styleName } ?: listOf("Regular")
         }
     }

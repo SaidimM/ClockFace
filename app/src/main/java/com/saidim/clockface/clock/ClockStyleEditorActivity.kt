@@ -6,10 +6,10 @@ import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -19,18 +19,23 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.saidim.clockface.R
 import com.saidim.clockface.clock.ClockStyleEditorActivity.Companion.SHARED_ELEMENT_NAME
 import com.saidim.clockface.clock.syles.ClockStyleConfig
 import com.saidim.clockface.ui.theme.ClockFaceTheme
 import java.util.*
+import kotlin.math.abs
 
 class ClockStyleEditorActivity : ComponentActivity() {
     private val viewModel: ClockStyleEditorViewModel by viewModels()
@@ -244,14 +249,33 @@ fun ClockStyleEditorScreen(
                                     textView.animate().alpha(1f).setDuration(500).start()
                                 }
 
+                                ClockAnimation.SLIDE -> {
+                                    textView.translationX = -50f
+                                    textView.animate().translationX(0f).setDuration(300).start()
+                                }
+
+                                ClockAnimation.BOUNCE -> {
+                                    textView.translationY = -20f
+                                    textView.animate()
+                                        .translationY(0f)
+                                        .setDuration(300)
+                                        .setInterpolator(android.view.animation.BounceInterpolator())
+                                        .start()
+                                }
+
                                 ClockAnimation.PULSE -> {
                                     textView.scaleX = 0.8f
                                     textView.scaleY = 0.8f
-                                    textView.animate().scaleX(1f).scaleY(1f).setDuration(300).start()
+                                    textView.animate()
+                                        .scaleX(1f)
+                                        .scaleY(1f)
+                                        .setDuration(300)
+                                        .setInterpolator(android.view.animation.OvershootInterpolator())
+                                        .start()
                                 }
 
                                 else -> {
-                                    // No animation or other animations
+                                    // No animation
                                 }
                             }
                         }
@@ -519,11 +543,11 @@ fun FontStyleSelector(
                                 try {
                                     // Get a typeface for this font family
                                     val typeface = TypefaceUtil.getTypefaceFromFamilyAndStyle(
-                                        context, 
-                                        fontFamily.familyName, 
+                                        context,
+                                        fontFamily.familyName,
                                         "Regular"
                                     ) ?: Typeface.DEFAULT
-                                    
+
                                     textView.typeface = typeface
                                     textView.text = fontFamily.displayName
                                 } catch (e: Exception) {
@@ -576,14 +600,14 @@ fun FontStyleSelector(
         ) {
             // Get common font weights to display
             val commonWeights = listOf("Thin", "Light", "Regular", "Bold", "Black")
-            
+
             // Determine which weights to display - either available weights or common weights with some disabled
             val displayWeights = if (availableWeights.size >= 3) {
                 availableWeights
             } else {
                 commonWeights
             }
-            
+
             displayWeights.forEach { style ->
                 val isAvailable = availableWeights.contains(style)
                 val isSelected = style == currentStyle
@@ -758,44 +782,61 @@ fun ClockAnimationSelector(
             modifier = Modifier.padding(bottom = 8.dp)
         )
 
-        RadioGroup(
-            items = ClockAnimation.entries.map { it.displayName },
-            selectedIndex = ClockAnimation.entries.indexOf(selectedAnimation),
-            onSelectedChanged = { index ->
-                onAnimationSelected(ClockAnimation.entries[index])
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(vertical = 8.dp)
+        ) {
+            items(ClockAnimation.entries.size) { index ->
+                val animation = ClockAnimation.entries[index]
+                val isSelected = selectedAnimation == animation
+
+                AnimationIcon(
+                    animation = animation,
+                    isSelected = isSelected,
+                    onClick = { onAnimationSelected(animation) }
+                )
             }
-        )
+        }
     }
 }
 
 @Composable
-fun RadioGroup(
-    items: List<String>,
-    selectedIndex: Int,
-    onSelectedChanged: (Int) -> Unit
+fun AnimationIcon(
+    animation: ClockAnimation,
+    isSelected: Boolean,
+    onClick: () -> Unit
 ) {
-    Column {
-        items.forEachIndexed { index, item ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .selectable(
-                        selected = index == selectedIndex,
-                        onClick = { onSelectedChanged(index) }
-                    )
-                    .padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                RadioButton(
-                    selected = index == selectedIndex,
-                    onClick = null
-                )
-                Text(
-                    text = item,
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(start = 8.dp)
-                )
-            }
+    Surface(
+        modifier = Modifier
+            .size(80.dp)
+            .clickable { onClick() },
+        shape = RoundedCornerShape(12.dp),
+        color = if (isSelected)
+            MaterialTheme.colorScheme.primaryContainer
+        else
+            MaterialTheme.colorScheme.surfaceVariant,
+        border = BorderStroke(
+            width = if (isSelected) 2.dp else 0.dp,
+            color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
+        )
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Image(
+                painter = painterResource(
+                    id = when (animation) {
+                        ClockAnimation.NONE -> R.drawable.ic_none
+                        ClockAnimation.FADE -> R.drawable.ic_fade
+                        ClockAnimation.SLIDE -> R.drawable.ic_slide
+                        ClockAnimation.BOUNCE -> R.drawable.ic_bounce
+                        ClockAnimation.PULSE -> R.drawable.ic_pulse
+                    }
+                ),
+                contentDescription = "${animation.displayName} animation",
+                modifier = Modifier.size(48.dp)
+            )
         }
     }
 }
