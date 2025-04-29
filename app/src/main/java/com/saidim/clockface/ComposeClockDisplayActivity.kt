@@ -14,19 +14,12 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.platform.LocalContext
@@ -43,9 +36,6 @@ import com.saidim.clockface.clock.ClockAnimation
 import com.saidim.clockface.clock.TypefaceUtil
 import com.saidim.clockface.settings.AppSettings
 import com.saidim.clockface.ui.theme.ClockFaceTheme
-import kotlinx.coroutines.launch
-import kotlin.math.PI
-import kotlin.math.sin
 
 class ComposeClockDisplayActivity : ComponentActivity() {
 
@@ -232,9 +222,12 @@ fun AnimatedClockText(
             // Set a key that changes when the character changes
             key("${animationCounter.value}_${index}_${char}") {
                 val shouldAnimate = index >= previousTime.value.length ||
-                    (index < previousTime.value.length && char != previousTime.value[index])
+                        (index < previousTime.value.length && char != previousTime.value[index])
 
-                Log.d("AnimClock", "Char '$char' at index $index: shouldAnimate=$shouldAnimate, counter=${animationCounter.value}")
+                Log.d(
+                    "AnimClock",
+                    "Char '$char' at index $index: shouldAnimate=$shouldAnimate, counter=${animationCounter.value}"
+                )
 
                 AnimatedCharacter(
                     character = char.toString(),
@@ -267,7 +260,10 @@ fun AnimatedCharacter(
 
     // Use animationKey to force re-execution of LaunchedEffect
     LaunchedEffect(animationKey, character) {
-        Log.d("AnimChar", "LaunchedEffect for '$character' (key=$animationKey): shouldAnimate=$shouldAnimate, type=$animationType")
+        Log.d(
+            "AnimChar",
+            "LaunchedEffect for '$character' (key=$animationKey): shouldAnimate=$shouldAnimate, type=$animationType"
+        )
         if (shouldAnimate) {
             Log.d("AnimChar", "Animating '$character' with $animationType")
             when (animationType) {
@@ -296,7 +292,8 @@ fun AnimatedCharacter(
                     scale.animateTo(1f, tween(100))
                 }
 
-                else -> { /* No animation */ }
+                else -> { /* No animation */
+                }
             }
         } else {
             // Reset animations when not animating

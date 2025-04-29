@@ -59,10 +59,6 @@ class ClockStyleEditorViewModel(application: Application) : AndroidViewModel(app
         _clockAnimation.value = animation
     }
 
-    // Dummy methods that won't actually save any settings
-    fun setTimeFormat(use24Hour: Boolean) {}
-    fun setShowSeconds(showSeconds: Boolean) {}
-
     fun saveSettings() {
         viewModelScope.launch {
             // Create ClockStyleConfig with current settings

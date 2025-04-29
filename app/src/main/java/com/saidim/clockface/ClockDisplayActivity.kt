@@ -55,14 +55,6 @@ class ClockDisplayActivity : AppCompatActivity() {
         setupObservers()
         setupLongPressMenu()
         observeBackground()
-
-        // Get settings from intent
-        intent.getBooleanExtra("is24Hour", true).let {
-            viewModel.setTimeFormat(it)
-        }
-        intent.getBooleanExtra("showSeconds", true).let {
-            viewModel.setShowSeconds(it)
-        }
     }
     
     private fun setupClockCharactersContainer() {

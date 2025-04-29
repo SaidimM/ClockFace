@@ -29,12 +29,6 @@ class ClockViewModel(application: Application) : AndroidViewModel(application) {
     private val _currentTime = MutableLiveData<String>()
     val currentTime: LiveData<String> = _currentTime
 
-    private val _is24Hour = MutableLiveData(true)
-    val is24Hour: LiveData<Boolean> = _is24Hour
-
-    private val _showSeconds = MutableLiveData(true)
-    val showSeconds: LiveData<Boolean> = _showSeconds
-
     val backgroundModel = AppSettings.instance.backgroundModel
 
     init {
@@ -52,10 +46,7 @@ class ClockViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun updateTime() {
         val currentDate = Date()
-        val pattern = when {
-            showSeconds.value == true -> if (is24Hour.value == true) "HH:mm:ss" else "hh:mm:ss a"
-            else -> if (is24Hour.value == true) "HH:mm" else "hh:mm a"
-        }
+        val pattern = "HH:mm"
         _currentTime.value = SimpleDateFormat(pattern, Locale.getDefault()).format(currentDate)
     }
 
@@ -87,13 +78,5 @@ class ClockViewModel(application: Application) : AndroidViewModel(application) {
                 "Josefin Sans" to "JosefinSans"
             )
         }
-    }
-
-    fun setTimeFormat(is24Hour: Boolean) {
-        _is24Hour.value = is24Hour
-    }
-
-    fun setShowSeconds(show: Boolean) {
-        _showSeconds.value = show
     }
 } 
