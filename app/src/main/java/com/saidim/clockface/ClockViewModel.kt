@@ -7,7 +7,6 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
-import com.saidim.clockface.clock.ClockStyleFormatter
 import com.saidim.clockface.settings.AppSettings
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -46,7 +45,7 @@ class ClockViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun updateTime() {
         val currentDate = Date()
-        val pattern = "HH:mm"
+        val pattern = "HH:mm:ss"
         _currentTime.value = SimpleDateFormat(pattern, Locale.getDefault()).format(currentDate)
     }
 
