@@ -23,6 +23,7 @@ data class BackgroundSettingsUiState(
     val colorModel: BackgroundModel.ColorModel = BackgroundModel.ColorModel(),
     val imageModel: BackgroundModel.ImageModel = BackgroundModel.ImageModel(),
     val videoModel: BackgroundModel.VideoModel = BackgroundModel.VideoModel(),
+    val activeBackgroundModel: BackgroundModel = colorModel, // Add active model, default to color
     val videos: List<PexelsVideo> = emptyList(),
     val unsplashPhotos: Map<String, List<UnsplashPhotoDto>> = emptyMap(), // Map of topic to photos
     val videoSearchQuery: String = "",
@@ -67,9 +68,10 @@ class BackgroundSettingsViewModel(application: Application) : AndroidViewModel(a
             _uiState.update { currentState ->
                 currentState.copy(
                     selectedBackgroundType = initialBackgroundType,
-                    colorModel = if (initialBackgroundModel is BackgroundModel.ColorModel) initialBackgroundModel else currentState.colorModel,
-                    imageModel = if (initialBackgroundModel is BackgroundModel.ImageModel) initialBackgroundModel else currentState.imageModel,
-                    videoModel = if (initialBackgroundModel is BackgroundModel.VideoModel) initialBackgroundModel else currentState.videoModel
+                    colorModel = if (initialBackgroundModel is BackgroundModel.ColorModel) initialBackgroundModel else BackgroundModel.ColorModel(),
+                    imageModel = if (initialBackgroundModel is BackgroundModel.ImageModel) initialBackgroundModel else BackgroundModel.ImageModel(),
+                    videoModel = if (initialBackgroundModel is BackgroundModel.VideoModel) initialBackgroundModel else BackgroundModel.VideoModel(),
+                    activeBackgroundModel = initialBackgroundModel
                 )
             }
             // Auto-load popular videos if video type is initially selected
@@ -90,17 +92,20 @@ class BackgroundSettingsViewModel(application: Application) : AndroidViewModel(a
                     if (event.type == BackgroundType.VIDEO && !_uiState.value.hasLoadedInitialVideos) {
                         handleEvent(BackgroundSettingsEvent.SearchVideos("popular"))
                     }
+                    // Do NOT update activeBackgroundModel here
                     // Add similar logic for IMAGE type if needed
                 }
                 is BackgroundSettingsEvent.SelectColor -> {
                     val newColorModel = _uiState.value.colorModel.copy(color = event.color)
                     appSettings.updateBackgroundModel(newColorModel)
-                    _uiState.update { it.copy(colorModel = newColorModel) }
+                    // Update both the specific model AND the active model
+                    _uiState.update { it.copy(colorModel = newColorModel, activeBackgroundModel = newColorModel) }
                 }
                 is BackgroundSettingsEvent.SelectImage -> {
                      val newImageModel = _uiState.value.imageModel.copy(imageUrl = event.photo.urls.regular)
                     appSettings.updateBackgroundModel(newImageModel)
-                    _uiState.update { it.copy(imageModel = newImageModel) }
+                    // Update both the specific model AND the active model
+                    _uiState.update { it.copy(imageModel = newImageModel, activeBackgroundModel = newImageModel) }
                 }
                 is BackgroundSettingsEvent.SelectVideo -> {
                     val newVideoModel = _uiState.value.videoModel.copy(
@@ -108,7 +113,8 @@ class BackgroundSettingsViewModel(application: Application) : AndroidViewModel(a
                         url = event.video.getBestVideoFile()?.link ?: ""
                     )
                     appSettings.updateBackgroundModel(newVideoModel)
-                    _uiState.update { it.copy(videoModel = newVideoModel) }
+                    // Update both the specific model AND the active model
+                    _uiState.update { it.copy(videoModel = newVideoModel, activeBackgroundModel = newVideoModel) }
                 }
                  is BackgroundSettingsEvent.SearchVideos -> {
                      if (event.query.isBlank()) return@launch
@@ -155,7 +161,15 @@ class BackgroundSettingsViewModel(application: Application) : AndroidViewModel(a
                 is BackgroundSettingsEvent.ToggleGradient -> {
                      val newColorModel = _uiState.value.colorModel.copy(enableFluidColor = event.enabled)
                     appSettings.updateBackgroundModel(newColorModel)
-                    _uiState.update { it.copy(colorModel = newColorModel) }
+                    // Also update active model if the current active model IS the color model
+                    _uiState.update {
+                        val updatedActiveModel = if (it.activeBackgroundModel is BackgroundModel.ColorModel) {
+                            newColorModel
+                        } else {
+                            it.activeBackgroundModel
+                        }
+                        it.copy(colorModel = newColorModel, activeBackgroundModel = updatedActiveModel)
+                    }
                 }
             }
         }

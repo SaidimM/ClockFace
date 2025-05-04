@@ -142,7 +142,7 @@ fun BackgroundSettingsScreen(
             // Add graphicsLayer transformations here later (alpha, scale, translationY)
         ) {
             BackgroundPreview(
-                uiState = uiState,
+                activeBackgroundModel = uiState.activeBackgroundModel,
                 isVideoPlaying = isVideoPlaying
             ) { isPlaying ->
                 isVideoPlaying = isPlaying // Update local state based on player callback
@@ -239,7 +239,7 @@ fun BackgroundSettingsScreen(
 
 @Composable
 fun BackgroundPreview(
-    uiState: BackgroundSettingsUiState,
+    activeBackgroundModel: BackgroundModel,
     isVideoPlaying: Boolean,
     onVideoPlaybackStateChanged: (Boolean) -> Unit
 ) {
@@ -250,18 +250,18 @@ fun BackgroundPreview(
             .height(200.dp)
             .background(MaterialTheme.colorScheme.surfaceVariant) // Placeholder background
     ) {
-        when (uiState.selectedBackgroundType) {
-            BackgroundType.COLOR -> {
+        when (activeBackgroundModel) {
+            is BackgroundModel.ColorModel -> {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(color = Color(uiState.colorModel.color))
+                        .background(color = Color(activeBackgroundModel.color))
                 )
             }
-            BackgroundType.IMAGE -> {
+            is BackgroundModel.ImageModel -> {
                 SubcomposeAsyncImage(
                     model = ImageRequest.Builder(context)
-                        .data(uiState.imageModel.imageUrl.ifEmpty { R.drawable.placeholder }) // Placeholder if empty
+                        .data(activeBackgroundModel.imageUrl.ifEmpty { R.drawable.placeholder })
                         .crossfade(true)
                         .build(),
                     contentDescription = stringResource(R.string.cd_background_image_preview),
@@ -270,9 +270,9 @@ fun BackgroundPreview(
                     loading = { PreviewLoadingIndicator() }
                 )
             }
-            BackgroundType.VIDEO -> {
+            is BackgroundModel.VideoModel -> {
                 Box(Modifier.fillMaxSize()) {
-                    val videoUrl = uiState.videoModel.url
+                    val videoUrl = activeBackgroundModel.url
                     if (videoUrl.isNotEmpty()) {
                         AndroidView(
                             factory = { ctx ->
@@ -304,7 +304,6 @@ fun BackgroundPreview(
                             PreviewLoadingIndicator()
                         }
                     } else {
-                        // Show placeholder text if no video URL
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             Text(stringResource(R.string.no_video_selected))
                         }
