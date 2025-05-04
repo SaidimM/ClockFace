@@ -31,18 +31,23 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -56,6 +61,7 @@ import com.saidim.clockface.background.unsplash.UnsplashTopics
 import com.saidim.clockface.background.video.PexelsVideo
 import com.saidim.clockface.ui.theme.ClockFaceTheme
 import kotlinx.coroutines.launch
+import androidx.compose.ui.unit.lerp
 
 // --- Activity --- //
 @OptIn(ExperimentalFoundationApi::class)
@@ -100,13 +106,20 @@ fun BackgroundSettingsScreen(
     onNavigateBack: () -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
-    val focusManager = LocalFocusManager.current
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
 
     // Local state for Video Player (needed for AndroidView interaction)
     var isVideoPlaying by remember { mutableStateOf(false) }
     // Derived state for pager
     val imagePagerState = rememberPagerState(initialPage = 0) { UnsplashTopics.topics.size }
+    // Scroll behavior for collapsing TopAppBar
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
+
+    // Define expanded and collapsed heights for the preview area
+    // These might need adjustment based on your desired appearance
+    val expandedHeight = 200.dp
+    val collapsedHeight = TopAppBarDefaults.LargeAppBarCollapsedHeight // Standard collapsed height
 
     // Automatically load Unsplash topic when the pager page changes
     LaunchedEffect(imagePagerState.currentPage) {
@@ -117,90 +130,115 @@ fun BackgroundSettingsScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.background_settings)) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack, // Use AutoMirrored
-                            contentDescription = stringResource(R.string.cd_back) // Use string resource
+    Box(modifier = Modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection)) {
+
+        // Calculate current height based on scroll offset
+        val currentTopAppBarHeight = lerp(expandedHeight, collapsedHeight, scrollBehavior.state.collapsedFraction)
+
+        // Background Preview (drawn first, behind the Scaffold)
+        Box(modifier = Modifier
+            .fillMaxWidth()
+            .height(currentTopAppBarHeight) // Dynamic height
+            // Add graphicsLayer transformations here later (alpha, scale, translationY)
+        ) {
+            BackgroundPreview(
+                uiState = uiState,
+                isVideoPlaying = isVideoPlaying
+            ) { isPlaying ->
+                isVideoPlaying = isPlaying // Update local state based on player callback
+            }
+        }
+
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            topBar = {
+               LargeTopAppBar(
+                  title = { Text(stringResource(R.string.background_settings)) }, // Just the title now
+                  navigationIcon = {
+                      IconButton(onClick = onNavigateBack) {
+                          Icon(
+                              imageVector = Icons.AutoMirrored.Filled.ArrowBack, // Use AutoMirrored
+                              contentDescription = stringResource(R.string.cd_back) // Use string resource
+                          )
+                      }
+                  },
+                 scrollBehavior = scrollBehavior, // Apply scroll behavior
+                 // Make AppBar background transparent initially, fade in later if needed
+                 colors = TopAppBarDefaults.largeTopAppBarColors(
+                     containerColor = Color.Transparent,
+                     scrolledContainerColor = MaterialTheme.colorScheme.surface // Or your desired collapsed color
+                 )
+             )
+            },
+            // Make Scaffold background transparent so Box behind is visible
+            containerColor = Color.Transparent
+        ) { paddingValues ->
+             // Adjust padding for the content list
+            val topPadding = paddingValues.calculateTopPadding()
+
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = topPadding) // Use calculated padding
+            ) {
+                // Background Type Selection Card
+                item {
+                    BackgroundTypeSelector(selectedType = uiState.selectedBackgroundType) {
+                        onEvent(BackgroundSettingsEvent.SelectBackgroundType(it))
+                    }
+                }
+
+                // Color Settings Card
+                item {
+                    AnimatedVisibility(
+                        visible = uiState.selectedBackgroundType == BackgroundType.COLOR,
+                        enter = fadeIn(),
+                        exit = fadeOut()
+                    ) {
+                        ColorSettingsCard(
+                            colorModel = uiState.colorModel,
+                            onColorSelected = { color -> onEvent(BackgroundSettingsEvent.SelectColor(color)) },
+                            onGradientToggled = { enabled -> onEvent(BackgroundSettingsEvent.ToggleGradient(enabled)) }
+                            // Add gradient direction event if needed
                         )
                     }
                 }
-            )
-        }
-    ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            // Preview Section
-            item {
-                BackgroundPreview(uiState = uiState, isVideoPlaying = isVideoPlaying) { isPlaying ->
-                    isVideoPlaying = isPlaying // Update local state based on player callback
-                }
-            }
 
-            // Background Type Selection Card
-            item {
-                BackgroundTypeSelector(selectedType = uiState.selectedBackgroundType) {
-                    onEvent(BackgroundSettingsEvent.SelectBackgroundType(it))
+                // Image Settings Card
+                item {
+                    AnimatedVisibility(
+                        visible = uiState.selectedBackgroundType == BackgroundType.IMAGE,
+                        enter = fadeIn(),
+                        exit = fadeOut()
+                    ) {
+                        ImageSettingsCard(
+                            topics = UnsplashTopics.topics,
+                            photosByTopic = uiState.unsplashPhotos,
+                            isLoadingByTopic = uiState.isImageLoading,
+                            pagerState = imagePagerState,
+                            onImageSelected = { topic, photo -> onEvent(BackgroundSettingsEvent.SelectImage(topic, photo)) },
+                            coroutineScope = coroutineScope // Pass scope for pager scroll
+                        )
+                    }
                 }
-            }
 
-            // Color Settings Card
-            item {
-                AnimatedVisibility(
-                    visible = uiState.selectedBackgroundType == BackgroundType.COLOR,
-                    enter = fadeIn(),
-                    exit = fadeOut()
-                ) {
-                    ColorSettingsCard(
-                        colorModel = uiState.colorModel,
-                        onColorSelected = { color -> onEvent(BackgroundSettingsEvent.SelectColor(color)) },
-                        onGradientToggled = { enabled -> onEvent(BackgroundSettingsEvent.ToggleGradient(enabled)) }
-                        // Add gradient direction event if needed
-                    )
-                }
-            }
-
-            // Image Settings Card
-            item {
-                AnimatedVisibility(
-                    visible = uiState.selectedBackgroundType == BackgroundType.IMAGE,
-                    enter = fadeIn(),
-                    exit = fadeOut()
-                ) {
-                    ImageSettingsCard(
-                        topics = UnsplashTopics.topics,
-                        photosByTopic = uiState.unsplashPhotos,
-                        isLoadingByTopic = uiState.isImageLoading,
-                        pagerState = imagePagerState,
-                        onImageSelected = { topic, photo -> onEvent(BackgroundSettingsEvent.SelectImage(topic, photo)) },
-                        coroutineScope = coroutineScope // Pass scope for pager scroll
-                    )
-                }
-            }
-
-            // Video Settings Card
-            item {
-                AnimatedVisibility(
-                    visible = uiState.selectedBackgroundType == BackgroundType.VIDEO,
-                    enter = fadeIn(),
-                    exit = fadeOut()
-                ) {
-                     VideoSettingsCard(
-                        videos = uiState.videos,
-                        isLoading = uiState.isVideoLoading,
-                        searchQuery = uiState.videoSearchQuery,
-                        onQueryChanged = { query -> onEvent(BackgroundSettingsEvent.UpdateVideoSearchQuery(query)) },
-                        onSearch = { query -> onEvent(BackgroundSettingsEvent.SearchVideos(query)) },
-                        onVideoSelected = { video -> onEvent(BackgroundSettingsEvent.SelectVideo(video)) },
-                        focusManager = focusManager
-                    )
+                // Video Settings Card
+                item {
+                    AnimatedVisibility(
+                        visible = uiState.selectedBackgroundType == BackgroundType.VIDEO,
+                        enter = fadeIn(),
+                        exit = fadeOut()
+                    ) {
+                         VideoSettingsCard(
+                            videos = uiState.videos,
+                            isLoading = uiState.isVideoLoading,
+                            searchQuery = uiState.videoSearchQuery,
+                            onQueryChanged = { query -> onEvent(BackgroundSettingsEvent.UpdateVideoSearchQuery(query)) },
+                            onSearch = { query -> onEvent(BackgroundSettingsEvent.SearchVideos(query)) },
+                            onVideoSelected = { video -> onEvent(BackgroundSettingsEvent.SelectVideo(video)) },
+                            focusManager = focusManager
+                        )
+                    }
                 }
             }
         }
@@ -421,13 +459,13 @@ fun ColorSwatches(selectedColor: Int, onColorSelected: (Int) -> Unit) {
             Box(
                 modifier = Modifier
                     .size(48.dp)
-                    .clip(CircleShape)
+                    .clip(RoundedCornerShape(12.dp))
                     .background(Color(color))
                     .clickable { onColorSelected(color) }
                     .border(
                         width = 3.dp,
                         color = if (selectedColor == color) MaterialTheme.colorScheme.primary else Color.Transparent,
-                        shape = CircleShape
+                        shape = RoundedCornerShape(12.dp)
                     )
             )
         }
