@@ -49,6 +49,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
@@ -61,7 +62,6 @@ import com.saidim.clockface.background.unsplash.UnsplashTopics
 import com.saidim.clockface.background.video.PexelsVideo
 import com.saidim.clockface.ui.theme.ClockFaceTheme
 import kotlinx.coroutines.launch
-import androidx.compose.ui.unit.lerp
 
 // --- Activity --- //
 @OptIn(ExperimentalFoundationApi::class)
@@ -84,13 +84,13 @@ class ComposeBackgroundSettingsActivity : ComponentActivity() {
             }
         }
     }
-    
+
     override fun onPause() {
         super.onPause()
         // Note: Video pausing and gradient animations are handled in the Composable
         // We no longer need to explicitly save settings as they're saved when changed
     }
-    
+
     override fun onDestroy() {
         super.onDestroy()
         // Cleanup is handled by Compose's lifecycle
@@ -152,92 +152,82 @@ fun BackgroundSettingsScreen(
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             topBar = {
-               LargeTopAppBar(
-                  title = { Text(stringResource(R.string.background_settings)) }, // Just the title now
-                  navigationIcon = {
-                      IconButton(onClick = onNavigateBack) {
-                          Icon(
-                              imageVector = Icons.AutoMirrored.Filled.ArrowBack, // Use AutoMirrored
-                              contentDescription = stringResource(R.string.cd_back) // Use string resource
-                          )
-                      }
-                  },
-                 scrollBehavior = scrollBehavior, // Apply scroll behavior
-                 // Make AppBar background transparent initially, fade in later if needed
-                 colors = TopAppBarDefaults.largeTopAppBarColors(
-                     containerColor = Color.Transparent,
-                     scrolledContainerColor = MaterialTheme.colorScheme.surface // Or your desired collapsed color
-                 )
-             )
+                LargeTopAppBar(
+                    title = { Text(stringResource(R.string.background_settings)) }, // Just the title now
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack, // Use AutoMirrored
+                                contentDescription = stringResource(R.string.cd_back) // Use string resource
+                            )
+                        }
+                    },
+                    scrollBehavior = scrollBehavior, // Apply scroll behavior
+                    // Make AppBar background transparent initially, fade in later if needed
+                    colors = TopAppBarDefaults.largeTopAppBarColors(
+                        containerColor = Color.Transparent,
+                        scrolledContainerColor = MaterialTheme.colorScheme.surface // Or your desired collapsed color
+                    )
+                )
             },
             // Make Scaffold background transparent so Box behind is visible
             containerColor = Color.Transparent
         ) { paddingValues ->
-             // Adjust padding for the content list
+            // Adjust padding for the content list
             val topPadding = paddingValues.calculateTopPadding()
 
-            LazyColumn(
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(top = topPadding) // Use calculated padding
+                    .padding(bottom = paddingValues.calculateBottomPadding())
             ) {
-                // Background Type Selection Card
-                item {
-                    BackgroundTypeSelector(selectedType = uiState.selectedBackgroundType) {
-                        onEvent(BackgroundSettingsEvent.SelectBackgroundType(it))
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    // Background Type Selection Card
+                    item {
+                        BackgroundTypeSelector(selectedType = uiState.selectedBackgroundType) {
+                            onEvent(BackgroundSettingsEvent.SelectBackgroundType(it))
+                        }
                     }
-                }
-
-                // Color Settings Card
-                item {
-                    AnimatedVisibility(
-                        visible = uiState.selectedBackgroundType == BackgroundType.COLOR,
-                        enter = fadeIn(),
-                        exit = fadeOut()
-                    ) {
-                        ColorSettingsCard(
-                            colorModel = uiState.colorModel,
-                            onColorSelected = { color -> onEvent(BackgroundSettingsEvent.SelectColor(color)) },
-                            onGradientToggled = { enabled -> onEvent(BackgroundSettingsEvent.ToggleGradient(enabled)) }
-                            // Add gradient direction event if needed
-                        )
-                    }
-                }
-
-                // Image Settings Card
-                item {
-                    AnimatedVisibility(
-                        visible = uiState.selectedBackgroundType == BackgroundType.IMAGE,
-                        enter = fadeIn(),
-                        exit = fadeOut()
-                    ) {
-                        ImageSettingsCard(
-                            topics = UnsplashTopics.topics,
-                            photosByTopic = uiState.unsplashPhotos,
-                            isLoadingByTopic = uiState.isImageLoading,
-                            pagerState = imagePagerState,
-                            onImageSelected = { topic, photo -> onEvent(BackgroundSettingsEvent.SelectImage(topic, photo)) },
-                            coroutineScope = coroutineScope // Pass scope for pager scroll
-                        )
-                    }
-                }
-
-                // Video Settings Card
-                item {
-                    AnimatedVisibility(
-                        visible = uiState.selectedBackgroundType == BackgroundType.VIDEO,
-                        enter = fadeIn(),
-                        exit = fadeOut()
-                    ) {
-                         VideoSettingsCard(
-                            videos = uiState.videos,
-                            isLoading = uiState.isVideoLoading,
-                            searchQuery = uiState.videoSearchQuery,
-                            onQueryChanged = { query -> onEvent(BackgroundSettingsEvent.UpdateVideoSearchQuery(query)) },
-                            onSearch = { query -> onEvent(BackgroundSettingsEvent.SearchVideos(query)) },
-                            onVideoSelected = { video -> onEvent(BackgroundSettingsEvent.SelectVideo(video)) },
-                            focusManager = focusManager
-                        )
+                    // Content cards with weight
+                    item {
+                        // This will make the content expand to fill available space
+                        Box(modifier = Modifier.fillParentMaxHeight()) {
+                            when (uiState.selectedBackgroundType) {
+                                BackgroundType.COLOR -> {
+                                    ColorSettingsCard(
+                                        colorModel = uiState.colorModel,
+                                        onColorSelected = { color -> onEvent(BackgroundSettingsEvent.SelectColor(color)) },
+                                        onGradientToggled = { enabled -> onEvent(BackgroundSettingsEvent.ToggleGradient(enabled)) }
+                                    )
+                                }
+                                BackgroundType.IMAGE -> {
+                                    ImageSettingsCard(
+                                        topics = UnsplashTopics.topics,
+                                        photosByTopic = uiState.unsplashPhotos,
+                                        isLoadingByTopic = uiState.isImageLoading,
+                                        pagerState = imagePagerState,
+                                        onImageSelected = { topic, photo ->
+                                            onEvent(BackgroundSettingsEvent.SelectImage(topic, photo))
+                                        },
+                                        coroutineScope = coroutineScope
+                                    )
+                                }
+                                BackgroundType.VIDEO -> {
+                                    VideoSettingsCard(
+                                        videos = uiState.videos,
+                                        isLoading = uiState.isVideoLoading,
+                                        searchQuery = uiState.videoSearchQuery,
+                                        onQueryChanged = { query -> onEvent(BackgroundSettingsEvent.UpdateVideoSearchQuery(query)) },
+                                        onSearch = { query -> onEvent(BackgroundSettingsEvent.SearchVideos(query)) },
+                                        onVideoSelected = { video -> onEvent(BackgroundSettingsEvent.SelectVideo(video)) },
+                                        focusManager = focusManager
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -316,7 +306,7 @@ fun BackgroundPreview(
                     } else {
                         // Show placeholder text if no video URL
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                           Text(stringResource(R.string.no_video_selected))
+                            Text(stringResource(R.string.no_video_selected))
                         }
                     }
                 }
@@ -427,13 +417,13 @@ fun ColorSettingsCard(
             GradientSwitch(enabled = colorModel.enableFluidColor, onToggle = onGradientToggled)
             // Add Gradient Direction controls here if implemented
             AnimatedVisibility(visible = colorModel.enableFluidColor) {
-                 Column(modifier = Modifier.padding(top = 16.dp)) {
-                     Text(
-                         text = stringResource(R.string.gradient_direction), // Placeholder
-                         style = MaterialTheme.typography.bodyMedium
-                     )
-                     // Gradient direction controls would go here
-                 }
+                Column(modifier = Modifier.padding(top = 16.dp)) {
+                    Text(
+                        text = stringResource(R.string.gradient_direction), // Placeholder
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    // Gradient direction controls would go here
+                }
             }
         }
     }
@@ -443,7 +433,7 @@ fun ColorSettingsCard(
 fun ColorSwatches(selectedColor: Int, onColorSelected: (Int) -> Unit) {
     // Define colors list outside LazyRow scope but within the Composable
     val colors = remember {
-         listOf(
+        listOf(
             0xFFE57373, 0xFF81C784, 0xFF64B5F6, 0xFFFFB74D, // Reds, Greens, Blues, Oranges
             0xFF9575CD, 0xFF4DB6AC, 0xFFF06292, 0xFFFFD54F, // Purples, Teals, Pinks, Yellows
             0xFFFFFFFF, 0xFF616161, 0xFF000000             // White, Grey, Black
@@ -509,7 +499,7 @@ fun ImageSettingsCard(
                 indicator = { tabPositions ->
                     if (pagerState.currentPage < tabPositions.size) { // Bounds check
                         TabRowDefaults.Indicator(
-                             modifier = Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage])
+                            modifier = Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage])
                         )
                     }
                 },
@@ -527,22 +517,22 @@ fun ImageSettingsCard(
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier
-                    .height(350.dp) // Give Pager a fixed height
+                    .weight(1f) // Give Pager a fixed height
                     .fillMaxWidth()
             ) { page ->
                 val currentTopic = topics[page]
                 val photos = photosByTopic[currentTopic]
                 val isLoading = isLoadingByTopic[currentTopic] ?: false
 
-                 Box(modifier = Modifier.fillMaxSize()) {
-                     if (isLoading) {
-                         PreviewLoadingIndicator()
-                     } else if (photos != null) {
-                         if (photos.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    if (isLoading) {
+                        PreviewLoadingIndicator()
+                    } else if (photos != null) {
+                        if (photos.isEmpty()) {
                             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
                                 Text(stringResource(R.string.no_images_found, currentTopic))
                             }
-                         } else {
+                        } else {
                             LazyVerticalGrid(
                                 columns = GridCells.Fixed(2),
                                 contentPadding = PaddingValues(16.dp),
@@ -552,18 +542,18 @@ fun ImageSettingsCard(
                             ) {
                                 items(photos, key = { it.id }) { photo ->
                                     ImageThumbnail(photo = photo) {
-                                         onImageSelected(currentTopic, photo)
+                                        onImageSelected(currentTopic, photo)
                                     }
                                 }
                             }
-                         }
-                     } else {
-                          // Placeholder before loading starts, or if error occurred (handled in VM)
-                           Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
-                                Text(stringResource(R.string.loading_topic, currentTopic))
-                           }
-                     }
-                 }
+                        }
+                    } else {
+                        // Placeholder before loading starts, or if error occurred (handled in VM)
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
+                            Text(stringResource(R.string.loading_topic, currentTopic))
+                        }
+                    }
+                }
             }
         }
     }
@@ -573,7 +563,7 @@ fun ImageSettingsCard(
 fun ImageThumbnail(photo: UnsplashPhotoDto, onClick: () -> Unit) {
     Card(
         modifier = Modifier
-            .aspectRatio(1f) // Make thumbnails square
+            .aspectRatio(1.5f) // Make thumbnails square
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(8.dp) // Slightly rounded corners
     ) {
@@ -582,7 +572,7 @@ fun ImageThumbnail(photo: UnsplashPhotoDto, onClick: () -> Unit) {
                 .data(photo.urls.thumb)
                 .crossfade(true)
                 .build(),
-            contentDescription = photo.user.name ?: stringResource(R.string.cd_unsplash_image),
+            contentDescription = photo.user.name,
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize(),
             loading = { Box(Modifier.background(MaterialTheme.colorScheme.surfaceVariant)) } // Simple placeholder
@@ -630,16 +620,16 @@ fun VideoSettingsCard(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(300.dp) // Fixed height for the grid container
+                    .weight(1f)
             ) {
                 if (isLoading) {
-                     PreviewLoadingIndicator()
-                 } else {
-                     if (videos.isEmpty() && searchQuery.isNotEmpty()) {
-                          Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                              Text(stringResource(R.string.no_videos_found, searchQuery))
-                          }
-                     } else {
+                    PreviewLoadingIndicator()
+                } else {
+                    if (videos.isEmpty() && searchQuery.isNotEmpty()) {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text(stringResource(R.string.no_videos_found, searchQuery))
+                        }
+                    } else {
                         LazyVerticalGrid(
                             columns = GridCells.Fixed(2),
                             contentPadding = PaddingValues(vertical = 8.dp), // Padding for grid itself
@@ -654,7 +644,7 @@ fun VideoSettingsCard(
                                 )
                             }
                         }
-                     }
+                    }
                 }
             }
         }
@@ -697,4 +687,4 @@ fun VideoThumbnail(video: BackgroundModel.VideoModel, onClick: () -> Unit) {
             }
         }
     }
-} 
+}
