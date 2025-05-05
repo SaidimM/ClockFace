@@ -11,6 +11,7 @@ import com.saidim.clockface.background.color.GradientColorSettings
 import com.saidim.clockface.background.model.BackgroundModel
 import com.saidim.clockface.background.unsplash.UnsplashPhotoDto
 import com.saidim.clockface.background.unsplash.UnsplashRepository
+import com.saidim.clockface.background.unsplash.UnsplashTopicDto
 import com.saidim.clockface.background.video.PexelsVideo
 import com.saidim.clockface.background.video.PexelsVideoRepository
 import com.saidim.clockface.settings.AppSettings
@@ -25,10 +26,12 @@ data class BackgroundSettingsUiState(
     val videoModel: BackgroundModel.VideoModel = BackgroundModel.VideoModel(),
     val activeBackgroundModel: BackgroundModel = colorModel, // Add active model, default to color
     val videos: List<PexelsVideo> = emptyList(),
-    val unsplashPhotos: Map<String, List<UnsplashPhotoDto>> = emptyMap(), // Map of topic to photos
+    val topics: List<UnsplashTopicDto> = emptyList(),
+    val unsplashPhotos: Map<String, List<UnsplashPhotoDto>> = emptyMap(), // Key is now Topic ID/Slug
     val videoSearchQuery: String = "",
     val isVideoLoading: Boolean = false,
-    val isImageLoading: Map<String, Boolean> = emptyMap(), // Map of topic to loading state
+    val isImageLoading: Map<String, Boolean> = emptyMap(), // Key is now Topic ID/Slug
+    val isTopicListLoading: Boolean = false,
     val hasLoadedInitialVideos: Boolean = false
 )
 
@@ -36,11 +39,12 @@ data class BackgroundSettingsUiState(
 sealed interface BackgroundSettingsEvent {
     data class SelectBackgroundType(val type: BackgroundType) : BackgroundSettingsEvent
     data class SelectColor(val color: Int) : BackgroundSettingsEvent
-    data class SelectImage(val topic: String, val photo: UnsplashPhotoDto) : BackgroundSettingsEvent
+    data object LoadTopics : BackgroundSettingsEvent
+    data class LoadTopicPhotos(val topicIdOrSlug: String) : BackgroundSettingsEvent
+    data class SelectImage(val topicIdOrSlug: String, val photo: UnsplashPhotoDto) : BackgroundSettingsEvent
     data class SelectVideo(val video: PexelsVideo) : BackgroundSettingsEvent
     data class SearchVideos(val query: String) : BackgroundSettingsEvent
     data class UpdateVideoSearchQuery(val query: String) : BackgroundSettingsEvent
-    data class LoadUnsplashTopic(val topic: String) : BackgroundSettingsEvent
     data class ToggleGradient(val enabled: Boolean) : BackgroundSettingsEvent
     // Add other events as needed (e.g., for gradient direction)
 }
@@ -53,11 +57,12 @@ class BackgroundSettingsViewModel(application: Application) : AndroidViewModel(a
     private val _uiState = MutableStateFlow(BackgroundSettingsUiState())
     val uiState: StateFlow<BackgroundSettingsUiState> = _uiState.asStateFlow()
 
-    // Keep track of which topics have been loaded
-    private val loadedUnsplashTopics = mutableSetOf<String>()
+    // Keep track of which topic IDs/slugs have had photos loaded
+    private val loadedTopicPhotoIds = mutableSetOf<String>()
 
     init {
         loadInitialState()
+        handleEvent(BackgroundSettingsEvent.LoadTopics)
     }
 
     private fun loadInitialState() {
@@ -101,11 +106,53 @@ class BackgroundSettingsViewModel(application: Application) : AndroidViewModel(a
                     // Update both the specific model AND the active model
                     _uiState.update { it.copy(colorModel = newColorModel, activeBackgroundModel = newColorModel) }
                 }
+                is BackgroundSettingsEvent.LoadTopics -> {
+                    if (_uiState.value.isTopicListLoading || _uiState.value.topics.isNotEmpty()) return@launch
+                    _uiState.update { it.copy(isTopicListLoading = true) }
+                    try {
+                        val topics = unsplashRepository.listTopics(perPage = 20)
+                        _uiState.update {
+                            it.copy(topics = topics, isTopicListLoading = false)
+                        }
+                    } catch (e: Exception) {
+                        Log.e("BackgroundSettingsVM", "Error loading Unsplash topics", e)
+                        _uiState.update { it.copy(isTopicListLoading = false) }
+                        // TODO: Show error message to user
+                    }
+                }
+                is BackgroundSettingsEvent.LoadTopicPhotos -> {
+                    val topicId = event.topicIdOrSlug
+                    if (topicId in loadedTopicPhotoIds || _uiState.value.isImageLoading[topicId] == true) return@launch
+
+                    _uiState.update { it.copy(isImageLoading = it.isImageLoading + (topicId to true)) }
+                    loadedTopicPhotoIds.add(topicId)
+
+                    try {
+                        val photos = unsplashRepository.getTopicPhotos(topicId)
+                        _uiState.update {
+                            it.copy(
+                                unsplashPhotos = it.unsplashPhotos + (topicId to photos),
+                                isImageLoading = it.isImageLoading + (topicId to false)
+                            )
+                        }
+                    } catch (e: Exception) {
+                        Log.e("BackgroundSettingsVM", "Error loading photos for topic $topicId", e)
+                        _uiState.update { it.copy(isImageLoading = it.isImageLoading + (topicId to false)) }
+                        loadedTopicPhotoIds.remove(topicId) // Allow retry on error
+                        // TODO: Show error message to user
+                    }
+                }
                 is BackgroundSettingsEvent.SelectImage -> {
-                     val newImageModel = _uiState.value.imageModel.copy(imageUrl = event.photo.urls.regular)
-                    appSettings.updateBackgroundModel(newImageModel)
-                    // Update both the specific model AND the active model
-                    _uiState.update { it.copy(imageModel = newImageModel, activeBackgroundModel = newImageModel) }
+                    val newImageModel = _uiState.value.imageModel.copy(
+                        imageUrl = event.photo.urls.regular,
+                        blurHash = event.photo.blurHash,
+                        topicId = event.topicIdOrSlug
+                    )
+                    _uiState.update { it.copy(
+                        imageModel = newImageModel,
+                        activeBackgroundModel = newImageModel
+                    ) }
+                    saveCurrentBackgroundModel(newImageModel)
                 }
                 is BackgroundSettingsEvent.SelectVideo -> {
                     val newVideoModel = _uiState.value.videoModel.copy(
@@ -116,50 +163,29 @@ class BackgroundSettingsViewModel(application: Application) : AndroidViewModel(a
                     // Update both the specific model AND the active model
                     _uiState.update { it.copy(videoModel = newVideoModel, activeBackgroundModel = newVideoModel) }
                 }
-                 is BackgroundSettingsEvent.SearchVideos -> {
-                     if (event.query.isBlank()) return@launch
-                     _uiState.update { it.copy(isVideoLoading = true, videoSearchQuery = event.query) }
-                     try {
-                         val videos = pexelsRepository.searchVideos(event.query)
-                         _uiState.update {
-                             it.copy(
-                                 videos = videos,
-                                 isVideoLoading = false,
-                                 hasLoadedInitialVideos = it.hasLoadedInitialVideos || event.query == "popular" // Mark initial load done
-                             )
-                         }
-                     } catch (e: Exception) {
-                         Log.e("BackgroundSettingsVM", "Error searching videos", e)
-                         _uiState.update { it.copy(isVideoLoading = false) }
-                         // TODO: Show error message to user
-                     }
-                 }
+                is BackgroundSettingsEvent.SearchVideos -> {
+                    if (event.query.isBlank()) return@launch
+                    _uiState.update { it.copy(isVideoLoading = true, videoSearchQuery = event.query) }
+                    try {
+                        val videos = pexelsRepository.searchVideos(event.query)
+                        _uiState.update {
+                            it.copy(
+                                videos = videos,
+                                isVideoLoading = false,
+                                hasLoadedInitialVideos = it.hasLoadedInitialVideos || event.query == "popular" // Mark initial load done
+                            )
+                        }
+                    } catch (e: Exception) {
+                        Log.e("BackgroundSettingsVM", "Error searching videos", e)
+                        _uiState.update { it.copy(isVideoLoading = false) }
+                        // TODO: Show error message to user
+                    }
+                }
                 is BackgroundSettingsEvent.UpdateVideoSearchQuery -> {
                     _uiState.update { it.copy(videoSearchQuery = event.query) }
                 }
-                is BackgroundSettingsEvent.LoadUnsplashTopic -> {
-                    if (event.topic in loadedUnsplashTopics || _uiState.value.isImageLoading[event.topic] == true) return@launch
-
-                    _uiState.update { it.copy(isImageLoading = it.isImageLoading + (event.topic to true)) }
-                    loadedUnsplashTopics.add(event.topic) // Mark as loading/loaded
-
-                     try {
-                         val photos = unsplashRepository.searchPhotos(event.topic).results
-                         _uiState.update {
-                             it.copy(
-                                 unsplashPhotos = it.unsplashPhotos + (event.topic to photos),
-                                 isImageLoading = it.isImageLoading + (event.topic to false)
-                             )
-                         }
-                     } catch (e: Exception) {
-                         Log.e("BackgroundSettingsVM", "Error loading Unsplash topic ${event.topic}", e)
-                         _uiState.update { it.copy(isImageLoading = it.isImageLoading + (event.topic to false)) }
-                          loadedUnsplashTopics.remove(event.topic) // Allow retry on error
-                         // TODO: Show error message to user
-                     }
-                 }
                 is BackgroundSettingsEvent.ToggleGradient -> {
-                     val newColorModel = _uiState.value.colorModel.copy(enableFluidColor = event.enabled)
+                    val newColorModel = _uiState.value.colorModel.copy(enableFluidColor = event.enabled)
                     appSettings.updateBackgroundModel(newColorModel)
                     // Also update active model if the current active model IS the color model
                     _uiState.update {
@@ -173,6 +199,10 @@ class BackgroundSettingsViewModel(application: Application) : AndroidViewModel(a
                 }
             }
         }
+    }
+
+    private fun saveCurrentBackgroundModel(model: BackgroundModel) {
+        // ... (existing save logic) ...
     }
 
     fun setBackgroundType(type: BackgroundType) {

@@ -18,6 +18,9 @@ sealed class BackgroundModel {
         var imageUrl: String = "",
         var enableSlides: Boolean = false,
         var enableAnimation: Boolean = false,
+        var blurHash: String = "",
+        var topicId: String = "",
+        var featuredImages: List<String> = emptyList()
     ) : BackgroundModel() {
         override fun toJson(): String = Gson().toJson(this)
     }

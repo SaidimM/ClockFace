@@ -35,3 +35,9 @@ data class UnsplashCollectionDto(
     val title: String,
     val coverPhoto: UnsplashPhotoDto
 )
+
+data class UnsplashTopicDto(
+    val id: String,
+    val slug: String,
+    val title: String
+)

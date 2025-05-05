@@ -101,4 +101,26 @@ class UnsplashRepository {
             )
         }
     }
+
+    suspend fun listTopics(page: Int = 1, perPage: Int = 30): List<UnsplashTopicDto> {
+        // Add error handling as needed
+        return api.listTopics(page = page, perPage = perPage)
+    }
+
+    suspend fun getTopicPhotos(
+        topicIdOrSlug: String,
+        page: Int = 1,
+        perPage: Int = 30,
+        orientation: String = "portrait",
+        orderBy: String = "latest"
+    ): List<UnsplashPhotoDto> {
+        // Add error handling as needed
+        return api.getTopicPhotos(
+            topicIdOrSlug = topicIdOrSlug,
+            page = page,
+            perPage = perPage,
+            orientation = orientation,
+            orderBy = orderBy
+        )
+    }
 } 

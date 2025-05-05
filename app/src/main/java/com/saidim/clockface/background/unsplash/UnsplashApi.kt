@@ -42,4 +42,21 @@ interface UnsplashApi {
         @Query("page") page: Int = 1,
         @Query("per_page") perPage: Int = 30
     ): List<UnsplashPhotoDto>
+
+    @Headers("Authorization: Client-ID $CLIENT_ID")
+    @GET("topics")
+    suspend fun listTopics(
+        @Query("page") page: Int = 1,
+        @Query("per_page") perPage: Int = 30
+    ): List<UnsplashTopicDto>
+
+    @Headers("Authorization: Client-ID $CLIENT_ID")
+    @GET("topics/{id_or_slug}/photos")
+    suspend fun getTopicPhotos(
+        @Path("id_or_slug") topicIdOrSlug: String,
+        @Query("page") page: Int = 1,
+        @Query("per_page") perPage: Int = 30,
+        @Query("orientation") orientation: String = "portrait",
+        @Query("order_by") orderBy: String = "latest"
+    ): List<UnsplashPhotoDto>
 } 

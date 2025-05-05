@@ -51,4 +51,5 @@
     <string name="cd_unsplash_image">Unsplash 图片</string>
     <string name="no_videos_found">未找到"%s"的视频</string>
     <string name="cd_video_thumbnail">视频缩略图</string>
+    <string name="no_topics_found">No topics found. Check connection?</string>
 </resources> 

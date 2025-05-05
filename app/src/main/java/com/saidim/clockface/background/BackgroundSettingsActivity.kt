@@ -58,7 +58,7 @@ import coil.request.ImageRequest
 import com.saidim.clockface.R
 import com.saidim.clockface.background.model.BackgroundModel
 import com.saidim.clockface.background.unsplash.UnsplashPhotoDto
-import com.saidim.clockface.background.unsplash.UnsplashTopics
+import com.saidim.clockface.background.unsplash.UnsplashTopicDto
 import com.saidim.clockface.background.video.PexelsVideo
 import com.saidim.clockface.ui.theme.ClockFaceTheme
 import kotlinx.coroutines.launch
@@ -112,7 +112,7 @@ fun BackgroundSettingsScreen(
     // Local state for Video Player (needed for AndroidView interaction)
     var isVideoPlaying by remember { mutableStateOf(false) }
     // Derived state for pager
-    val imagePagerState = rememberPagerState(initialPage = 0) { UnsplashTopics.topics.size }
+    val imagePagerState = rememberPagerState(initialPage = 0) { uiState.topics.size }
     // Scroll behavior for collapsing TopAppBar
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
 
@@ -121,12 +121,18 @@ fun BackgroundSettingsScreen(
     val expandedHeight = 200.dp
     val collapsedHeight = TopAppBarDefaults.LargeAppBarCollapsedHeight // Standard collapsed height
 
-    // Automatically load Unsplash topic when the pager page changes
-    LaunchedEffect(imagePagerState.currentPage) {
-        val currentTopic = UnsplashTopics.topics[imagePagerState.currentPage]
-        // Trigger load only if not already loading/loaded
-        if (uiState.unsplashPhotos[currentTopic] == null && uiState.isImageLoading[currentTopic] != true) {
-            onEvent(BackgroundSettingsEvent.LoadUnsplashTopic(currentTopic))
+    // Automatically load Unsplash topic photos when the pager page changes
+    LaunchedEffect(imagePagerState.currentPage, uiState.topics) { // Depend on topics list
+        if (uiState.topics.isNotEmpty()) {
+            // Ensure the current page is within the bounds of the topics list
+            val currentTopicIndex = imagePagerState.currentPage.coerceIn(0, uiState.topics.size - 1)
+            val currentTopic = uiState.topics[currentTopicIndex]
+            val topicId = currentTopic.id // Use topic ID
+
+            // Trigger load only if not already loading/loaded for this topic ID
+            if (uiState.unsplashPhotos[topicId] == null && uiState.isImageLoading[topicId] != true) {
+                onEvent(BackgroundSettingsEvent.LoadTopicPhotos(topicId))
+            }
         }
     }
 
@@ -204,16 +210,27 @@ fun BackgroundSettingsScreen(
                                     )
                                 }
                                 BackgroundType.IMAGE -> {
-                                    ImageSettingsCard(
-                                        topics = UnsplashTopics.topics,
-                                        photosByTopic = uiState.unsplashPhotos,
-                                        isLoadingByTopic = uiState.isImageLoading,
-                                        pagerState = imagePagerState,
-                                        onImageSelected = { topic, photo ->
-                                            onEvent(BackgroundSettingsEvent.SelectImage(topic, photo))
-                                        },
-                                        coroutineScope = coroutineScope
-                                    )
+                                    // Show loading indicator if topic list is loading
+                                    if (uiState.isTopicListLoading) {
+                                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                            CircularProgressIndicator()
+                                        }
+                                    } else {
+                                        ImageSettingsCard(
+                                            // Pass the fetched topics
+                                            topics = uiState.topics,
+                                            photosByTopic = uiState.unsplashPhotos, // Map key is topic ID
+                                            isLoadingByTopic = uiState.isImageLoading, // Map key is topic ID
+                                            pagerState = imagePagerState,
+                                            onImageSelected = { topicId, photo -> // Pass topic ID
+                                                onEvent(BackgroundSettingsEvent.SelectImage(topicId, photo))
+                                            },
+                                            onLoadTopicPhotos = { topicId -> // New lambda
+                                                onEvent(BackgroundSettingsEvent.LoadTopicPhotos(topicId))
+                                            },
+                                            coroutineScope = coroutineScope
+                                        )
+                                    }
                                 }
                                 BackgroundType.VIDEO -> {
                                     VideoSettingsCard(
@@ -479,13 +496,32 @@ fun GradientSwitch(enabled: Boolean, onToggle: (Boolean) -> Unit) {
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ImageSettingsCard(
-    topics: List<String>,
-    photosByTopic: Map<String, List<UnsplashPhotoDto>>,
-    isLoadingByTopic: Map<String, Boolean>,
+    topics: List<UnsplashTopicDto>, // Changed from List<String>
+    photosByTopic: Map<String, List<UnsplashPhotoDto>>, // Key is topic ID
+    isLoadingByTopic: Map<String, Boolean>, // Key is topic ID
     pagerState: androidx.compose.foundation.pager.PagerState,
-    onImageSelected: (String, UnsplashPhotoDto) -> Unit,
+    onImageSelected: (String, UnsplashPhotoDto) -> Unit, // First param is topic ID
+    onLoadTopicPhotos: (String) -> Unit, // New lambda to trigger loading
     coroutineScope: kotlinx.coroutines.CoroutineScope
 ) {
+    // Adjust pager size based on fetched topics
+    // Note: This might cause issues if the topic list changes dynamically *after* initial composition.
+    // Consider alternative state management if dynamic topic lists are required.
+    val adjustedPagerState = rememberPagerState(initialPage = pagerState.currentPage) { topics.size }
+
+    // Sync external pager state with internal adjusted state if necessary
+    // This might be complex depending on exact requirements.
+    LaunchedEffect(pagerState.currentPage) {
+        if (pagerState.currentPage < topics.size) {
+             adjustedPagerState.scrollToPage(pagerState.currentPage)
+        }
+    }
+    LaunchedEffect(adjustedPagerState.currentPage) {
+         // If you need to notify the external state holder about page changes initiated here
+         // pagerState.scrollToPage(adjustedPagerState.currentPage) // Be careful of loops
+    }
+
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -493,67 +529,83 @@ fun ImageSettingsCard(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            ScrollableTabRow(
-                selectedTabIndex = pagerState.currentPage,
-                indicator = { tabPositions ->
-                    if (pagerState.currentPage < tabPositions.size) { // Bounds check
-                        TabRowDefaults.Indicator(
-                            modifier = Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage])
+             if (topics.isEmpty()) {
+                 // Show a message if no topics were loaded
+                 Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                     Text(stringResource(R.string.no_topics_found)) // Add this string resource
+                 }
+             } else {
+                ScrollableTabRow(
+                    selectedTabIndex = adjustedPagerState.currentPage,
+                    indicator = { tabPositions ->
+                        if (adjustedPagerState.currentPage < tabPositions.size) { // Bounds check
+                            TabRowDefaults.Indicator(
+                                modifier = Modifier.tabIndicatorOffset(tabPositions[adjustedPagerState.currentPage])
+                            )
+                        }
+                    },
+                    edgePadding = 0.dp // Remove default padding
+                ) {
+                    topics.forEachIndexed { index, topic ->
+                        Tab(
+                            selected = adjustedPagerState.currentPage == index,
+                            onClick = {
+                                coroutineScope.launch { adjustedPagerState.animateScrollToPage(index) }
+                                // Trigger photo loading if needed when tab is clicked
+                                if (photosByTopic[topic.id] == null && isLoadingByTopic[topic.id] != true) {
+                                     onLoadTopicPhotos(topic.id)
+                                }
+                            },
+                            text = { Text(topic.title, style = MaterialTheme.typography.bodyMedium) } // Use topic title
                         )
                     }
-                },
-                edgePadding = 0.dp // Remove default padding
-            ) {
-                topics.forEachIndexed { index, topic ->
-                    Tab(
-                        selected = pagerState.currentPage == index,
-                        onClick = { coroutineScope.launch { pagerState.animateScrollToPage(index) } },
-                        text = { Text(topic, style = MaterialTheme.typography.bodyMedium) }
-                    )
                 }
-            }
 
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier
-                    .weight(1f) // Give Pager a fixed height
-                    .fillMaxWidth()
-            ) { page ->
-                val currentTopic = topics[page]
-                val photos = photosByTopic[currentTopic]
-                val isLoading = isLoadingByTopic[currentTopic] ?: false
+                HorizontalPager(
+                    state = adjustedPagerState, // Use the adjusted state
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                ) { page ->
+                    // Get topic ID using the current page index
+                    val currentTopic = topics[page]
+                    val topicId = currentTopic.id
+                    val photos = photosByTopic[topicId]
+                    val isLoading = isLoadingByTopic[topicId] ?: false
 
-                Box(modifier = Modifier.fillMaxSize()) {
-                    if (isLoading) {
-                        PreviewLoadingIndicator()
-                    } else if (photos != null) {
-                        if (photos.isEmpty()) {
-                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
-                                Text(stringResource(R.string.no_images_found, currentTopic))
-                            }
-                        } else {
-                            LazyVerticalGrid(
-                                columns = GridCells.Fixed(2),
-                                contentPadding = PaddingValues(16.dp),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier = Modifier.fillMaxSize()
-                            ) {
-                                items(photos, key = { it.id }) { photo ->
-                                    ImageThumbnail(photo = photo) {
-                                        onImageSelected(currentTopic, photo)
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        if (isLoading) {
+                            PreviewLoadingIndicator()
+                        } else if (photos != null) {
+                            if (photos.isEmpty()) {
+                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
+                                    Text(stringResource(R.string.no_images_found, currentTopic.title)) // Use topic title
+                                }
+                            } else {
+                                LazyVerticalGrid(
+                                    columns = GridCells.Fixed(2),
+                                    contentPadding = PaddingValues(16.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                    modifier = Modifier.fillMaxSize()
+                                ) {
+                                    items(photos, key = { it.id }) { photo ->
+                                        ImageThumbnail(photo = photo) {
+                                            onImageSelected(topicId, photo) // Pass topic ID
+                                        }
                                     }
                                 }
                             }
-                        }
-                    } else {
-                        // Placeholder before loading starts, or if error occurred (handled in VM)
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
-                            Text(stringResource(R.string.loading_topic, currentTopic))
+                        } else {
+                            // Placeholder before loading starts for this specific topic
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
+                                // Text(stringResource(R.string.loading_topic, currentTopic.title)) // Or just show loader
+                                PreviewLoadingIndicator() // Show loader until photos are loaded
+                            }
                         }
                     }
                 }
-            }
+             }
         }
     }
 }
