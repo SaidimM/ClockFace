@@ -114,7 +114,6 @@ fun ClockStyleEditorScreen(
     val clockColor by viewModel.clockColor.collectAsState()
     val clockFontFamily by viewModel.clockFontFamily.collectAsState()
     val clockSize by viewModel.clockSize.collectAsState()
-    val clockAnimation by viewModel.clockAnimation.collectAsState()
 
     // Parse the font family and style
     val parts = clockFontFamily.split("-")
@@ -241,43 +240,6 @@ fun ClockStyleEditorScreen(
                                 // Fallback to default typeface
                                 textView.typeface = Typeface.DEFAULT
                             }
-
-                            // Apply animations if needed
-                            when (clockAnimation) {
-                                ClockAnimation.FADE -> {
-                                    textView.alpha = 0f
-                                    textView.animate().alpha(1f).setDuration(500).start()
-                                }
-
-                                ClockAnimation.SLIDE -> {
-                                    textView.translationX = -50f
-                                    textView.animate().translationX(0f).setDuration(300).start()
-                                }
-
-                                ClockAnimation.BOUNCE -> {
-                                    textView.translationY = -20f
-                                    textView.animate()
-                                        .translationY(0f)
-                                        .setDuration(300)
-                                        .setInterpolator(android.view.animation.BounceInterpolator())
-                                        .start()
-                                }
-
-                                ClockAnimation.PULSE -> {
-                                    textView.scaleX = 0.8f
-                                    textView.scaleY = 0.8f
-                                    textView.animate()
-                                        .scaleX(1f)
-                                        .scaleY(1f)
-                                        .setDuration(300)
-                                        .setInterpolator(android.view.animation.OvershootInterpolator())
-                                        .start()
-                                }
-
-                                else -> {
-                                    // No animation
-                                }
-                            }
                         }
                     )
                 }
@@ -340,20 +302,6 @@ fun ClockStyleEditorScreen(
                     )
                 }
 
-                // Animation Style Selector
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Box(modifier = Modifier.padding(16.dp)) {
-                        ClockAnimationSelector(
-                            selectedAnimation = clockAnimation,
-                            onAnimationSelected = { viewModel.setClockAnimation(it) }
-                        )
-                    }
-                }
                 // Add save button
                 Button(
                     onClick = { viewModel.saveSettings().also { onNavigateBack() } },
@@ -367,46 +315,6 @@ fun ClockStyleEditorScreen(
                 // Add some bottom padding for better scrolling experience
                 Spacer(modifier = Modifier.height(16.dp))
             }
-        }
-    }
-}
-
-
-@Composable
-fun SwitchPreference(
-    title: String,
-    subtitle: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyLarge
-                )
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Switch(
-                checked = checked,
-                onCheckedChange = onCheckedChange
-            )
         }
     }
 }
@@ -768,85 +676,6 @@ fun SizeAdjustmentSlider(
             }
         }
     }
-}
-
-@Composable
-fun ClockAnimationSelector(
-    selectedAnimation: ClockAnimation,
-    onAnimationSelected: (ClockAnimation) -> Unit
-) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            "Animation Style",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(vertical = 8.dp)
-        ) {
-            items(ClockAnimation.entries.size) { index ->
-                val animation = ClockAnimation.entries[index]
-                val isSelected = selectedAnimation == animation
-
-                AnimationIcon(
-                    animation = animation,
-                    isSelected = isSelected,
-                    onClick = { onAnimationSelected(animation) }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun AnimationIcon(
-    animation: ClockAnimation,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    Surface(
-        modifier = Modifier
-            .size(80.dp)
-            .clickable { onClick() },
-        shape = RoundedCornerShape(12.dp),
-        color = if (isSelected)
-            MaterialTheme.colorScheme.primaryContainer
-        else
-            MaterialTheme.colorScheme.surfaceVariant,
-        border = BorderStroke(
-            width = if (isSelected) 2.dp else 0.dp,
-            color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
-        )
-    ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Image(
-                painter = painterResource(
-                    id = when (animation) {
-                        ClockAnimation.NONE -> R.drawable.ic_none
-                        ClockAnimation.FADE -> R.drawable.ic_fade
-                        ClockAnimation.SLIDE -> R.drawable.ic_slide
-                        ClockAnimation.BOUNCE -> R.drawable.ic_bounce
-                        ClockAnimation.PULSE -> R.drawable.ic_pulse
-                    }
-                ),
-                contentDescription = "${animation.displayName} animation",
-                modifier = Modifier.size(48.dp)
-            )
-        }
-    }
-}
-
-enum class ClockAnimation(val displayName: String) {
-    NONE("None"),
-    FADE("Fade"),
-    SLIDE("Slide"),
-    BOUNCE("Bounce"),
-    PULSE("Pulse")
 }
 
 

@@ -12,7 +12,6 @@ import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.LinearLayout
 import android.widget.TextView
-import com.saidim.clockface.clock.ClockAnimation
 import kotlin.math.max
 
 /**
@@ -23,7 +22,6 @@ class TimeTextAnimator(private val containerView: ViewGroup) {
     private val characterViews = mutableListOf<TextView>()
     private val animators = mutableMapOf<Int, ValueAnimator>()
     private var currentText = ""
-    private var currentAnimationType: ClockAnimation = ClockAnimation.FADE
     private var textColor = 0
     private var textSize = 0f
     private var typeface: Typeface? = null
@@ -34,15 +32,6 @@ class TimeTextAnimator(private val containerView: ViewGroup) {
             containerView.orientation = LinearLayout.HORIZONTAL
             containerView.gravity = Gravity.CENTER
         }
-    }
-    
-    /**
-     * Sets the animation type to use when characters change
-     * 
-     * @param animationType The type of animation to use for character changes
-     */
-    fun setAnimationType(animationType: ClockAnimation) {
-        this.currentAnimationType = animationType
     }
     
     /**
@@ -137,18 +126,6 @@ class TimeTextAnimator(private val containerView: ViewGroup) {
         
         // Get the appropriate view
         val charView = characterViews[position]
-        
-        // Apply the animation based on the current animation type
-        when (currentAnimationType) {
-            ClockAnimation.FADE -> animateCharacterFade(position, charView, newChar)
-            ClockAnimation.PULSE -> animateCharacterPulse(position, charView, newChar)
-            ClockAnimation.SLIDE -> animateCharacterSlide(position, charView, newChar)
-            ClockAnimation.BOUNCE -> animateCharacterBounce(position, charView, newChar) 
-            else -> {
-                // No animation, just update the text
-                charView.text = newChar
-            }
-        }
     }
     
     private fun animateCharacterFade(position: Int, charView: TextView, newChar: String) {

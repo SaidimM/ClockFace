@@ -7,7 +7,6 @@ import com.google.gson.TypeAdapterFactory
 import com.google.gson.reflect.TypeToken
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonWriter
-import com.saidim.clockface.clock.ClockAnimation
 
 object ClockStyleConfigSerializer {
     // Create a custom type adapter factory for handling enums 
@@ -34,16 +33,6 @@ object ClockStyleConfigSerializer {
                     }
                     
                     val enumValue = reader.nextString()
-                    
-                    // Handle special case for ClockAnimation
-                    if (type.rawType == ClockAnimation::class.java) {
-                        try {
-                            return ClockAnimation.valueOf(enumValue) as T
-                        } catch (e: Exception) {
-                            // Return default value if enum value is invalid
-                            return ClockAnimation.NONE as T
-                        }
-                    }
                     
                     // Generic enum handling
                     return try {

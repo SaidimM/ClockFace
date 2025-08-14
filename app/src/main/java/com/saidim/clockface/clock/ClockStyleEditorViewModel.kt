@@ -26,9 +26,6 @@ class ClockStyleEditorViewModel(application: Application) : AndroidViewModel(app
     private val _clockSize = MutableStateFlow(1.0f)
     val clockSize = _clockSize.asStateFlow()
 
-    private val _clockAnimation = MutableStateFlow(ClockAnimation.NONE)
-    val clockAnimation = _clockAnimation.asStateFlow()
-
     val clockStyleConfig = appSettings.clockStyleConfig.asLiveData()
 
     init {
@@ -38,7 +35,6 @@ class ClockStyleEditorViewModel(application: Application) : AndroidViewModel(app
                 _clockColor.value = Color(config.fontColor)
                 _clockSize.value = config.fontSize
                 _clockFontFamily.value = config.fontFamily
-                _clockAnimation.value = config.animation
             }
         }
     }
@@ -55,18 +51,13 @@ class ClockStyleEditorViewModel(application: Application) : AndroidViewModel(app
         _clockSize.value = size
     }
 
-    fun setClockAnimation(animation: ClockAnimation) {
-        _clockAnimation.value = animation
-    }
-
     fun saveSettings() {
         viewModelScope.launch {
             // Create ClockStyleConfig with current settings
             val clockStyleConfig = ClockStyleConfig(
                 fontColor = clockColor.value.toArgb(),
                 fontSize = clockSize.value,
-                fontFamily = clockFontFamily.value,
-                animation = clockAnimation.value
+                fontFamily = clockFontFamily.value
             )
 
             // Save the config to AppSettings

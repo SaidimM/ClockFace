@@ -1,11 +1,12 @@
 package com.saidim.clockface
 
+import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.TextView
 import android.widget.VideoView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -15,20 +16,9 @@ import coil.ImageLoader
 import coil.load
 import com.saidim.clockface.background.BackgroundType
 import com.saidim.clockface.background.model.BackgroundModel
-import com.saidim.clockface.clock.ClockAnimation
 import com.saidim.clockface.clock.TypefaceUtil
-import com.saidim.clockface.clock.syles.ClockStyleConfig
 import com.saidim.clockface.settings.AppSettings
 import kotlinx.coroutines.launch
-import android.graphics.Typeface
-import android.util.Log
-import android.graphics.Color
-import android.view.Gravity
-import android.view.ViewGroup
-import android.widget.FrameLayout
-import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.ui.graphics.toArgb
 
 class ClockDisplayActivity : AppCompatActivity() {
     private val viewModel: ClockViewModel by viewModels()
@@ -46,21 +36,21 @@ class ClockDisplayActivity : AppCompatActivity() {
         setContentView(R.layout.activity_clock_display)
 
         rootView = findViewById(R.id.root)
-        
+
         // Set up a container for individual clock characters
         setupClockCharactersContainer()
-        
+
         imageLoader = ImageLoader(this)
 
         setupObservers()
         setupLongPressMenu()
         observeBackground()
     }
-    
+
     private fun setupClockCharactersContainer() {
         // Find the original clockText view to get its parent
         val originalClockText = findViewById<LinearLayout>(R.id.clockText)
-        
+
         // Initialize the animator with the container
         timeTextAnimator = TimeTextAnimator(originalClockText)
     }
@@ -77,13 +67,11 @@ class ClockDisplayActivity : AppCompatActivity() {
             // Observe the single clock style config directly
             appSettings.clockStyleConfig.collect { config ->
                 Log.d("ClockDisplayActivity", "Applying config: $config")
-                
+
                 // Update the animator with new style properties
                 timeTextAnimator.apply {
-                    setAnimationType(config.animation)
                     updateTextProperties(
-                        color = config.fontColor,
-                        size = 64 * config.fontSize, // Base size multiplied by config size
+                        color = config.fontColor, size = 64 * config.fontSize, // Base size multiplied by config size
                         font = TypefaceUtil.getTypefaceFromConfig(this@ClockDisplayActivity, config.fontFamily)
                     )
                 }
@@ -117,7 +105,7 @@ class ClockDisplayActivity : AppCompatActivity() {
                     previewColor.visibility = View.VISIBLE
                     previewImage.visibility = View.GONE
                     previewVideo.visibility = View.GONE
-                    
+
                     try {
                         previewColor.background = ColorDrawable(model.color)
                     } catch (e: Exception) {
@@ -147,7 +135,7 @@ class ClockDisplayActivity : AppCompatActivity() {
 
                     try {
                         if (model.imageUrl.isNotEmpty()) {
-                            previewImage.load(model.imageUrl) { 
+                            previewImage.load(model.imageUrl) {
                                 crossfade(true)
                                 error(ColorDrawable(Color.GRAY))
                             }
